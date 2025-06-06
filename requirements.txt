@@ -1,0 +1,11 @@
+# Voice Agent Dependencies
+openai>=1.0.0
+crewai>=0.70.0
+elevenlabs>=1.0.0
+mem0ai>=0.1.0
+pyaudio>=0.2.11
+python-dotenv>=1.0.0
+
+# Optional for better audio handling
+wave
+tempfile
