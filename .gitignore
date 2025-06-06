@@ -1,0 +1,31 @@
+# Environment variables - contains sensitive API keys
+.env
+
+# Audio files
+*.wav
+temp_audio_*.wav
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
