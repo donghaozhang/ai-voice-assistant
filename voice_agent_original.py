@@ -4,9 +4,10 @@ import os, wave, tempfile
 import pyaudio
 from openai import OpenAI
 from crewai import Agent, Crew, Task, Process
-from elevenlabs import play, ElevenLabs
+from elevenlabs import ElevenLabs
 from mem0 import MemoryClient
 from dotenv import load_dotenv
+import pygame
 
 # Load environment variables from .env file
 load_dotenv()
@@ -21,6 +22,12 @@ if missing_keys:
 openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 tts_client = ElevenLabs(api_key=os.getenv("ELEVENLABS_API_KEY"))
 memg = MemoryClient(api_key=os.getenv("MEM0_API_KEY"))
+
+# Initialize pygame mixer for audio playback
+try:
+    pygame.mixer.init()
+except:
+    print("⚠️ Warning: pygame mixer initialization failed. TTS may not work.")
 
 # Configuration from environment variables with defaults
 USER_ID = os.getenv("USER_ID", "voice_user")
@@ -48,9 +55,27 @@ def transcribe(file_path):
 # Speak reply
 def speak(text):
     try:
-        audio = tts_client.text_to_speech.convert(text=text,
-                    voice_id=VOICE_ID)  # Configurable voice
-        play(audio)
+        # Generate audio using ElevenLabs
+        audio = tts_client.text_to_speech.convert(text=text, voice_id=VOICE_ID)
+        
+        # Save audio to temporary file
+        temp_audio_path = f"temp_tts_{os.getpid()}.mp3"
+        with open(temp_audio_path, 'wb') as f:
+            for chunk in audio:
+                f.write(chunk)
+        
+        # Play audio using pygame
+        pygame.mixer.music.load(temp_audio_path)
+        pygame.mixer.music.play()
+        
+        # Wait for playback to finish
+        while pygame.mixer.music.get_busy():
+            pygame.time.wait(100)
+        
+        # Clean up temp file
+        if os.path.exists(temp_audio_path):
+            os.remove(temp_audio_path)
+            
     except Exception as e:
         print(f"🔇 TTS Error: {e}")
         print("Continuing without speech...")
