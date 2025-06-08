@@ -1,7 +1,7 @@
 ---
-description:
-globs:
-alwaysApply: false
+description: 
+globs: 
+alwaysApply: true
 ---
 # Automated Workflow & Quality Enforcement Rules
 
@@ -85,7 +85,7 @@ find . -type d -name "__pycache__" -exec rm -rf {} +
 ### Test Coverage Requirements
 
 **For [voice_agent_original.py](mdc:voice_agent_original.py) modifications:**
-- Must have corresponding tests in [tests/](mdc:tests/) directory
+- Must have corresponding tests in [tests/](mdc:tests) directory
 - Configuration changes → Update [tests/test_configuration.py](mdc:tests/test_configuration.py)
 - New functions → Add to appropriate test file
 - Integration changes → Update [tests/test_integration.py](mdc:tests/test_integration.py)
@@ -202,3 +202,4 @@ echo "Session $(date): Environment=ai-researcher, Tests=PASS/FAIL, Commits=N, Cu
 - ❌ Critical file corruption
 
 This automated workflow ensures consistent, high-quality development practices while minimizing manual oversight requirements.
+

@@ -1,7 +1,7 @@
 ---
-description:
-globs:
-alwaysApply: false
+description: 
+globs: 
+alwaysApply: true
 ---
 # Voice Agent Development Workflow Rules
 
@@ -32,7 +32,7 @@ pip install -r requirements.txt
 - Basic version: [voice_agent.py](mdc:voice_agent.py) 
 - Dependencies: [requirements.txt](mdc:requirements.txt)
 - Documentation: [README.md](mdc:README.md)
-- Tests directory: [tests/](mdc:tests/) with comprehensive test suite
+- Tests directory: [tests/](mdc:tests) with comprehensive test suite
 - Test runner: [tests/run_all_tests.py](mdc:tests/run_all_tests.py)
 
 ## 🔄 Git Workflow Automation
@@ -163,3 +163,4 @@ python voice_agent_original.py  # (with proper API keys in .env)
 - ✅ Changes pushed to remote repository
 - ✅ No temporary files left in workspace
 - ✅ Cursor IDE running latest version
+
