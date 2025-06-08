@@ -110,6 +110,7 @@ class VoiceConversationDemo:
         
         def on_response_completed(data):
             print("✅ Assistant finished responding")
+            print("🎤 Ready for next input - Hold SPACE to speak")
         
         def on_recording_started(data):
             print("🔴 Recording started - speak now!")
@@ -163,7 +164,7 @@ class VoiceConversationDemo:
             while self.conversation_active:
                 # Check for spacebar press (push-to-talk)
                 if keyboard.is_pressed('space'):
-                    if not self.speaking and not self.client.is_responding():
+                    if self.client.is_ready_for_input():
                         self.client.start_recording()
                         
                         # Wait while space is held

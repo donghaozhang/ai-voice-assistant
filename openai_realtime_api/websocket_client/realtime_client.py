@@ -81,6 +81,8 @@ class OpenAIRealtimeClient:
         self.recording = False
         self.playing = False
         self.pyaudio_instance = None
+        self.recording_start_time = None
+        self.is_processing_response = False
         
         # Event handlers
         self.event_handlers: Dict[str, List[Callable]] = {}
@@ -193,6 +195,7 @@ class OpenAIRealtimeClient:
                 self.emit("response_started", event)
                 
             elif event_type == "response.done":
+                self.is_processing_response = False
                 self.emit("response_completed", event)
                 
             elif event_type == "conversation.item.created":
@@ -201,6 +204,9 @@ class OpenAIRealtimeClient:
             elif event_type == "error":
                 error_msg = event.get("error", {}).get("message", "Unknown error")
                 print(f"API Error: {error_msg}")
+                # Reset processing flag on error
+                if "conversation_already_has_active_response" in error_msg or "input_audio_buffer" in error_msg:
+                    self.is_processing_response = False
                 self.emit("error", event)
             
             # Emit generic event
@@ -239,7 +245,7 @@ class OpenAIRealtimeClient:
     
     def start_recording(self):
         """Start recording audio from microphone."""
-        if self.recording:
+        if self.recording or self.is_processing_response:
             return
             
         try:
@@ -256,6 +262,7 @@ class OpenAIRealtimeClient:
             )
             
             self.recording = True
+            self.recording_start_time = time.time()
             
             # Start recording in a separate thread
             recording_thread = threading.Thread(target=self._record_audio)
@@ -353,11 +360,31 @@ class OpenAIRealtimeClient:
     
     def commit_audio_buffer(self):
         """Commit the current audio buffer and trigger processing."""
+        # Check if we have enough audio data (minimum 100ms)
+        recording_duration = 0
+        if self.recording_start_time:
+            recording_duration = time.time() - self.recording_start_time
+            if recording_duration < 0.15:  # 150ms minimum to be safe
+                print(f"⚠️  Recording too short ({recording_duration:.2f}s), skipping commit...")
+                return False
+        
         self.send_event("input_audio_buffer.commit")
+        if recording_duration > 0:
+            print(f"✅ Audio buffer committed ({recording_duration:.2f}s of audio)")
+        else:
+            print("✅ Audio buffer committed")
+        return True
     
     def create_response(self):
         """Trigger response generation."""
+        if self.is_processing_response:
+            print("⚠️  Already processing a response, skipping...")
+            return False
+        
+        self.is_processing_response = True
         self.send_event("response.create")
+        print("🎯 Response generation requested")
+        return True
     
     def cancel_response(self):
         """Cancel the current response generation."""
@@ -490,11 +517,16 @@ class RealtimeConversation(OpenAIRealtimeClient):
             self.stop_recording()
             # Give a moment for recording to stop
             time.sleep(0.1)
+            
             # Commit the audio buffer to process the speech
-            self.commit_audio_buffer()
-            # Request a response from the assistant
-            self.create_response()
-            print("🎤 Audio committed, requesting response...")
+            if self.commit_audio_buffer():
+                # Request a response from the assistant only if commit succeeded
+                if self.create_response():
+                    print("🎤 Audio committed, requesting response...")
+                else:
+                    print("⚠️  Response already in progress, waiting...")
+            else:
+                print("⚠️  Audio too short, try speaking longer...")
     
     def is_speaking(self) -> bool:
         """Check if currently speaking."""
@@ -502,4 +534,8 @@ class RealtimeConversation(OpenAIRealtimeClient):
     
     def is_responding(self) -> bool:
         """Check if assistant is currently responding."""
-        return self.conversation_active 
+        return self.is_processing_response
+    
+    def is_ready_for_input(self) -> bool:
+        """Check if the system is ready to accept new voice input."""
+        return not self.recording and not self.is_processing_response 
