@@ -10,5 +10,8 @@ pygame>=2.0.0
 # Built-in modules (no installation needed):
 # wave, tempfile, os
 
-# Additional dependencies for audio processing
-# ffmpeg (install via conda: conda install -c conda-forge ffmpeg)
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+websockets==12.0
+python-dotenv==1.0.0
+twilio==8.10.0

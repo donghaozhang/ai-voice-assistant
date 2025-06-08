@@ -6,28 +6,13 @@ import websockets
 from fastapi import FastAPI, WebSocket, Request
 from fastapi.responses import HTMLResponse, PlainTextResponse
 from dotenv import load_dotenv
-from twilio.rest import Client
 
 # Load environment variables
 load_dotenv()
 
 # Configuration
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
-TWILIO_ACCOUNT_SID = os.getenv('TWILIO_ACCOUNT_SID')
-TWILIO_AUTH_TOKEN = os.getenv('TWILIO_AUTH_TOKEN')
-TWILIO_API_KEY_SID = os.getenv('TWILIO_API_KEY_SID')
-TWILIO_API_KEY_SECRET = os.getenv('TWILIO_API_KEY_SECRET')
 PORT = int(os.getenv('PORT', 5050))
-
-# Initialize Twilio client for outbound calls (prefer API Key over Auth Token)
-if TWILIO_API_KEY_SID and TWILIO_API_KEY_SECRET:
-    twilio_client = Client(TWILIO_API_KEY_SID, TWILIO_API_KEY_SECRET, TWILIO_ACCOUNT_SID)
-    print(f"🔑 Using Twilio API Key authentication: {TWILIO_API_KEY_SID}")
-elif TWILIO_AUTH_TOKEN:
-    twilio_client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
-    print(f"🔑 Using Twilio Auth Token authentication")
-else:
-    raise ValueError("Missing Twilio credentials: Set either TWILIO_AUTH_TOKEN or both TWILIO_API_KEY_SID and TWILIO_API_KEY_SECRET")
 
 # OpenAI Realtime API configuration
 SYSTEM_MESSAGE = (
@@ -51,35 +36,6 @@ if not OPENAI_API_KEY:
 @app.get("/", response_class=PlainTextResponse)
 async def index_page():
     return "Twilio Voice AI Assistant Server is running!"
-
-@app.post("/make-call")
-async def make_outbound_call(request: Request):
-    """Make an outbound call to a phone number."""
-    try:
-        data = await request.json()
-        to_number = data.get('to')
-        from_number = data.get('from')  # Your Twilio phone number
-        
-        if not to_number or not from_number:
-            return {"error": "Both 'to' and 'from' phone numbers are required"}
-        
-        # Get the server's public URL (you'll need to set this)
-        host = request.headers.get('host', 'your-ngrok-url.ngrok.io')
-        
-        call = twilio_client.calls.create(
-            to=to_number,
-            from_=from_number,
-            url=f"https://{host}/incoming-call"  # Same TwiML as incoming calls
-        )
-        
-        return {
-            "success": True,
-            "call_sid": call.sid,
-            "message": f"Call initiated to {to_number}"
-        }
-        
-    except Exception as e:
-        return {"error": f"Failed to make call: {str(e)}"}
 
 @app.api_route("/incoming-call", methods=["GET", "POST"])
 async def handle_incoming_call(request: Request):
