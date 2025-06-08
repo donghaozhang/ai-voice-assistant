@@ -19,6 +19,7 @@ import json
 import asyncio
 import base64
 import threading
+import time
 import pyaudio
 import wave
 import tempfile
@@ -79,6 +80,7 @@ class OpenAIRealtimeClient:
         self.audio_output = None
         self.recording = False
         self.playing = False
+        self.pyaudio_instance = None
         
         # Event handlers
         self.event_handlers: Dict[str, List[Callable]] = {}
@@ -241,8 +243,11 @@ class OpenAIRealtimeClient:
             return
             
         try:
-            p = pyaudio.PyAudio()
-            self.audio_input = p.open(
+            # Initialize PyAudio instance if needed
+            if not self.pyaudio_instance:
+                self.pyaudio_instance = pyaudio.PyAudio()
+            
+            self.audio_input = self.pyaudio_instance.open(
                 format=self.audio_format,
                 channels=self.channels,
                 rate=self.sample_rate,
@@ -299,19 +304,34 @@ class OpenAIRealtimeClient:
     def _play_audio_chunk(self, audio_data: bytes):
         """Play audio chunk from the API."""
         try:
+            # Initialize PyAudio instance if needed
+            if not self.pyaudio_instance:
+                self.pyaudio_instance = pyaudio.PyAudio()
+            
+            # Initialize audio output stream if needed
             if not self.audio_output:
-                p = pyaudio.PyAudio()
-                self.audio_output = p.open(
+                self.audio_output = self.pyaudio_instance.open(
                     format=self.audio_format,
                     channels=self.channels,
                     rate=self.sample_rate,
-                    output=True
+                    output=True,
+                    frames_per_buffer=self.chunk_size
                 )
+                print("🔊 Audio output stream initialized")
             
+            # Play the audio chunk
             self.audio_output.write(audio_data)
+            print(f"🎵 Playing audio chunk: {len(audio_data)} bytes")
             
         except Exception as e:
-            print(f"Error playing audio: {e}")
+            print(f"❌ Error playing audio: {e}")
+            # Try to reinitialize audio output on error
+            if self.audio_output:
+                try:
+                    self.audio_output.close()
+                except:
+                    pass
+                self.audio_output = None
     
     def send_text_message(self, text: str):
         """Send a text message to the assistant."""
@@ -354,10 +374,27 @@ class OpenAIRealtimeClient:
         self.connected = False
         
         if self.audio_input:
-            self.audio_input.close()
+            try:
+                self.audio_input.stop_stream()
+                self.audio_input.close()
+            except:
+                pass
+            self.audio_input = None
             
         if self.audio_output:
-            self.audio_output.close()
+            try:
+                self.audio_output.stop_stream()
+                self.audio_output.close()
+            except:
+                pass
+            self.audio_output = None
+            
+        if self.pyaudio_instance:
+            try:
+                self.pyaudio_instance.terminate()
+            except:
+                pass
+            self.pyaudio_instance = None
             
         if self.ws:
             self.ws.close()
@@ -449,9 +486,15 @@ class RealtimeConversation(OpenAIRealtimeClient):
     
     def stop_speaking(self):
         """Stop speaking and process the audio."""
-        self.stop_recording()
-        self.commit_audio_buffer()
-        self.create_response()
+        if self.recording:
+            self.stop_recording()
+            # Give a moment for recording to stop
+            time.sleep(0.1)
+            # Commit the audio buffer to process the speech
+            self.commit_audio_buffer()
+            # Request a response from the assistant
+            self.create_response()
+            print("🎤 Audio committed, requesting response...")
     
     def is_speaking(self) -> bool:
         """Check if currently speaking."""
