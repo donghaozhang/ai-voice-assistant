@@ -1,0 +1,204 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Automated Workflow & Quality Enforcement Rules
+
+## 🤖 Pre-Development Automation Checklist
+
+### Before Starting Any Development Work
+
+**1. Environment Verification (Auto-Required)**
+```bash
+# Check if ai-researcher is active
+conda info --envs | grep "*"
+# If not ai-researcher, automatically activate:
+conda activate ai-researcher
+```
+
+**2. Cursor Update Check (Auto-Prompt)**
+- Automatically check: `Ctrl+Shift+P` → "Check for Updates"
+- If updates available → Auto-prompt to update before proceeding
+- Log update status in development notes
+
+**3. Git Status Verification**
+```bash
+# Auto-check for uncommitted changes
+git status --porcelain
+# If dirty working tree → prompt to commit or stash
+```
+
+## 🔄 Post-Coding Automation Workflow
+
+### After Every Successful Code Change
+
+**MANDATORY SEQUENCE** (Must be executed in order):
+
+**Step 1: Test Validation**
+```bash
+# Auto-run relevant tests based on changed files
+python tests/run_all_tests.py
+# STOP if tests fail - do not proceed to git operations
+```
+
+**Step 2: Git Operations (Only if tests pass)**
+```bash
+# Auto-stage all changes
+git add .
+
+# Auto-generate commit message based on changes
+# Format: "[Component] Brief description - Test results"
+# Example: "[Configuration] Fix MemoryClient mocking - All 11 tests pass"
+git commit -m "[Auto-generated descriptive message]"
+
+# Auto-push to remote
+git push
+```
+
+**Step 3: Cleanup Operations**
+```bash
+# Remove temporary test files
+rm -f temp_*.wav temp_*.mp3
+# Clear __pycache__ directories
+find . -type d -name "__pycache__" -exec rm -rf {} +
+```
+
+## 📊 Quality Gates & Enforcement
+
+### Code Quality Checkpoints
+
+**Before Git Commit:**
+- ✅ Conda environment is `ai-researcher`
+- ✅ All tests passing (minimum 85% success rate)
+- ✅ No syntax errors in Python files
+- ✅ No temporary files in workspace
+- ✅ [README.md](mdc:README.md) is up-to-date if structure changed
+
+**Auto-Rejection Criteria:**
+- ❌ Wrong conda environment active
+- ❌ Test failure rate > 15%
+- ❌ Syntax errors in modified files
+- ❌ Missing docstrings in new functions
+- ❌ Uncommitted changes to critical files
+
+### Test Coverage Requirements
+
+**For [voice_agent_original.py](mdc:voice_agent_original.py) modifications:**
+- Must have corresponding tests in [tests/](mdc:tests/) directory
+- Configuration changes → Update [tests/test_configuration.py](mdc:tests/test_configuration.py)
+- New functions → Add to appropriate test file
+- Integration changes → Update [tests/test_integration.py](mdc:tests/test_integration.py)
+
+## 🔧 Automated Cursor Maintenance
+
+### Daily Startup Routine (Auto-Execute)
+
+**1. Cursor Health Check:**
+```bash
+# Check Cursor version and available updates
+# Log: ~/.cursor/update-check.log
+echo "$(date): Checking Cursor updates..." >> ~/.cursor/update-check.log
+```
+
+**2. Extension Verification:**
+- Verify Python extension is active and updated
+- Check Git extension functionality
+- Validate workspace configuration
+
+**3. Environment Sync:**
+```bash
+# Ensure conda environment matches project requirements
+conda activate ai-researcher
+pip list > current-packages.txt
+diff current-packages.txt requirements.txt
+```
+
+### Weekly Maintenance (Auto-Prompt)
+
+**Every 7 days, auto-prompt for:**
+- Cursor IDE update check
+- Extension updates review
+- Dependency updates: `pip list --outdated`
+- Git repository cleanup: `git gc`
+
+## 🚨 Automated Failure Recovery
+
+### If Tests Fail (Auto-Recovery)
+
+**1. Immediate Actions:**
+- Stop git workflow
+- Display failing test details
+- Suggest specific fixes based on test type
+
+**2. Recovery Options:**
+```bash
+# For configuration test failures:
+python -m pytest tests/test_configuration.py -v --tb=short
+
+# For integration test failures:
+python -m pytest tests/test_integration.py -v --tb=short
+
+# Check environment issues:
+conda activate ai-researcher
+python --version
+```
+
+### If Git Operations Fail
+
+**1. Network Issues:**
+```bash
+# Check git remote status
+git remote -v
+git fetch --dry-run
+```
+
+**2. Merge Conflicts:**
+```bash
+# Auto-backup current changes
+git stash push -m "Auto-backup $(date)"
+# Provide conflict resolution guidance
+```
+
+## 📈 Automated Metrics & Reporting
+
+### Development Session Tracking
+
+**Auto-Log Each Session:**
+- Start time and conda environment used
+- Files modified and test results
+- Git operations performed
+- Cursor update status
+
+**Session End Report:**
+```bash
+# Auto-generate session summary
+echo "Session $(date): Environment=ai-researcher, Tests=PASS/FAIL, Commits=N, Cursor=UPDATED/CURRENT" >> .development-log.txt
+```
+
+### Weekly Quality Report
+
+**Auto-Generate Every Sunday:**
+- Test success rate trends
+- Commit frequency and quality
+- Cursor update compliance
+- Environment consistency metrics
+
+## 🎯 Automation Success Criteria
+
+**Green Light Indicators:**
+- ✅ `ai-researcher` environment auto-activated
+- ✅ Tests auto-run and pass (≥85% success rate)
+- ✅ Git operations auto-executed successfully
+- ✅ Cursor updates checked and applied
+- ✅ Workspace cleaned automatically
+- ✅ Quality metrics logged
+
+**Red Flag Triggers (Stop Automation):**
+- ❌ Wrong environment detected
+- ❌ Test failure rate >15%
+- ❌ Git operation failures
+- ❌ Cursor malfunction detected
+- ❌ Critical file corruption
+
+This automated workflow ensures consistent, high-quality development practices while minimizing manual oversight requirements.

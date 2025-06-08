@@ -1,0 +1,165 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Voice Agent Development Workflow Rules
+
+## 🔧 Environment Setup Requirements
+
+### Conda Environment Activation
+**CRITICAL**: This project requires the `ai-researcher` conda environment to run properly.
+
+**Before any coding or testing operations:**
+```bash
+conda activate ai-researcher
+```
+
+**Environment verification:**
+- Check current environment: `conda info --envs`
+- Verify Python version: `python --version` (should be 3.10.16)
+- Required packages: openai, elevenlabs, mem0ai, pygame, pyaudio, crewai
+
+**If environment doesn't exist:**
+```bash
+conda create -n ai-researcher python=3.10
+conda activate ai-researcher
+pip install -r requirements.txt
+```
+
+## 📁 Project Structure
+- Main entry point: [voice_agent_original.py](mdc:voice_agent_original.py)
+- Basic version: [voice_agent.py](mdc:voice_agent.py) 
+- Dependencies: [requirements.txt](mdc:requirements.txt)
+- Documentation: [README.md](mdc:README.md)
+- Tests directory: [tests/](mdc:tests/) with comprehensive test suite
+- Test runner: [tests/run_all_tests.py](mdc:tests/run_all_tests.py)
+
+## 🔄 Git Workflow Automation
+
+### After Each Successful Coding Session
+
+**1. Add all changes:**
+```bash
+git add .
+```
+
+**2. Commit with descriptive message:**
+```bash
+git commit -m "Descriptive commit message explaining changes"
+```
+
+**3. Push to remote repository:**
+```bash
+git push
+```
+
+**Commit Message Guidelines:**
+- Use present tense ("Add feature" not "Added feature")
+- Be specific about what was changed
+- Include test results if applicable
+- Examples:
+  - "Fix configuration tests to prevent real API calls during testing"
+  - "Add comprehensive test suite for voice agent components"
+  - "Update README with conda environment setup instructions"
+
+### Git Status Checks
+Always check status before committing:
+```bash
+git status
+git diff --staged
+```
+
+## 🧪 Testing Protocol
+
+### Before Committing Code
+1. **Activate conda environment**: `conda activate ai-researcher`
+2. **Run all tests**: `python tests/run_all_tests.py`
+3. **Run specific component tests**: `python -m pytest tests/test_[component].py -v`
+4. **Verify test coverage**: Ensure critical functionality is tested
+
+### Test Suite Components
+- [tests/test_configuration.py](mdc:tests/test_configuration.py) - Environment and API key validation
+- [tests/test_recording.py](mdc:tests/test_recording.py) - Audio recording functionality
+- [tests/test_transcription.py](mdc:tests/test_transcription.py) - Speech-to-text conversion
+- [tests/test_text_to_speech.py](mdc:tests/test_text_to_speech.py) - Text-to-speech synthesis
+- [tests/test_agent_logic.py](mdc:tests/test_agent_logic.py) - AI agent and memory management
+- [tests/test_main_loop.py](mdc:tests/test_main_loop.py) - Main conversation flow
+- [tests/test_integration.py](mdc:tests/test_integration.py) - End-to-end integration tests
+
+## 🔄 Cursor Update Checking
+
+### Automatic Update Verification
+Before starting any development session:
+
+**1. Check Cursor version:**
+- Use Cursor's built-in update checker: `Ctrl+Shift+P` → "Check for Updates"
+- Or check manually in Help → About
+
+**2. Update if available:**
+- Follow Cursor's update prompts
+- Restart Cursor after updates
+- Verify extensions are still working
+
+**3. Verify workspace integrity:**
+- Ensure all project files are accessible
+- Check that syntax highlighting works
+- Verify IntelliSense is functioning
+
+### Extension Management
+Keep these extensions updated:
+- Python extension for syntax support
+- Git extensions for version control
+- Testing framework extensions
+
+## ⚡ Quick Commands Reference
+
+### Development Workflow
+```bash
+# 1. Activate environment
+conda activate ai-researcher
+
+# 2. Run specific tests
+python -m pytest tests/test_configuration.py -v
+
+# 3. Run all tests
+python tests/run_all_tests.py
+
+# 4. Git workflow (after successful changes)
+git add .
+git commit -m "Your descriptive commit message"
+git push
+```
+
+### Troubleshooting Commands
+```bash
+# Check environment
+conda info --envs
+python --version
+pip list | findstr -i "openai elevenlabs mem0 pygame pyaudio crewai"
+
+# Check git status
+git status
+git log --oneline -5
+
+# Test specific functionality
+python voice_agent_original.py  # (with proper API keys in .env)
+```
+
+## 🚨 Critical Reminders
+
+1. **Always activate `ai-researcher` conda environment first**
+2. **Never commit without running tests**
+3. **Always add descriptive commit messages**
+4. **Keep Cursor updated for optimal performance**
+5. **Verify all API keys are properly set in `.env` file**
+6. **Clean up temporary files after testing**
+
+## 🎯 Success Metrics
+
+- ✅ Environment properly activated
+- ✅ All tests passing (target: 90%+ success rate)
+- ✅ Code committed with clear messages
+- ✅ Changes pushed to remote repository
+- ✅ No temporary files left in workspace
+- ✅ Cursor IDE running latest version
