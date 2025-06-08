@@ -109,47 +109,41 @@ class WeatherFunctionTest:
                 "tools": [
                     {
                         "type": "function",
-                        "function": {
-                            "name": "get_current_weather",
-                            "description": "Get the current weather conditions for a specific location.",
-                            "parameters": {
-                                "type": "object",
-                                "properties": {
-                                    "location": {
-                                        "type": "string",
-                                        "description": "The city and state/country, e.g. 'San Francisco, CA' or 'London, UK'"
-                                    }
-                                },
-                                "required": ["location"],
-                                "additionalProperties": False
+                        "name": "get_current_weather",
+                        "description": "Get the current weather conditions for a specific location.",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {
+                                "location": {
+                                    "type": "string",
+                                    "description": "The city and state/country, e.g. 'San Francisco, CA' or 'London, UK'"
+                                }
                             },
-                            "strict": True
+                            "required": ["location"],
+                            "additionalProperties": False
                         }
                     },
                     {
                         "type": "function",
-                        "function": {
-                            "name": "get_weather_forecast",
-                            "description": "Get weather forecast for a specific location over the next few days.",
-                            "parameters": {
-                                "type": "object",
-                                "properties": {
-                                    "location": {
-                                        "type": "string",
-                                        "description": "The city and state/country, e.g. 'San Francisco, CA' or 'London, UK'"
-                                    },
-                                    "days": {
-                                        "type": "integer",
-                                        "description": "Number of days for the forecast (1-7)",
-                                        "minimum": 1,
-                                        "maximum": 7,
-                                        "default": 3
-                                    }
+                        "name": "get_weather_forecast",
+                        "description": "Get weather forecast for a specific location over the next few days.",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {
+                                "location": {
+                                    "type": "string",
+                                    "description": "The city and state/country, e.g. 'San Francisco, CA' or 'London, UK'"
                                 },
-                                "required": ["location", "days"],
-                                "additionalProperties": False
+                                "days": {
+                                    "type": "integer",
+                                    "description": "Number of days for the forecast (1-7)",
+                                    "minimum": 1,
+                                    "maximum": 7,
+                                    "default": 3
+                                }
                             },
-                            "strict": True
+                            "required": ["location", "days"],
+                            "additionalProperties": False
                         }
                     }
                 ],
@@ -163,6 +157,20 @@ class WeatherFunctionTest:
             
             # Connect
             await self.client.connect()
+            
+            # Wait for connection to fully establish
+            max_wait = 10  # 10 seconds max wait
+            waited = 0
+            while not self.client.connected and waited < max_wait:
+                await asyncio.sleep(0.5)
+                waited += 0.5
+            
+            if not self.client.connected:
+                print("❌ Failed to establish connection")
+                return False
+            
+            # Wait a bit more for session to be ready
+            await asyncio.sleep(2)
             
             print("✅ Connected to OpenAI Realtime API with weather functions")
             return True
@@ -275,6 +283,14 @@ class WeatherFunctionTest:
     async def send_text_query(self, query: str):
         """Send a text query and wait for response."""
         print(f"💬 Sending query: {query}")
+        
+        # Check connection status
+        if not self.client.connected:
+            print("❌ Not connected to API")
+            return
+        
+        # Wait a moment for connection to stabilize
+        await asyncio.sleep(1)
         
         # Send message
         self.client.send_event("conversation.item.create", {
