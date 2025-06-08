@@ -18,7 +18,7 @@ conda activate ai-researcher
 **Environment verification:**
 - Check current environment: `conda info --envs`
 - Verify Python version: `python --version` (should be 3.10.16)
-- Required packages: openai, elevenlabs, mem0ai, pygame, pyaudio, crewai
+- Required packages: openai, elevenlabs, mem0ai, pygame, pyaudio, crewai, websocket-client
 
 **If environment doesn't exist:**
 ```bash
@@ -28,12 +28,37 @@ pip install -r requirements.txt
 ```
 
 ## 📁 Project Structure
+
+### Core Voice Agent Files
 - Main entry point: [voice_agent_original.py](mdc:voice_agent_original.py)
 - Basic version: [voice_agent.py](mdc:voice_agent.py) 
 - Dependencies: [requirements.txt](mdc:requirements.txt)
 - Documentation: [README.md](mdc:README.md)
 - Tests directory: [tests/](mdc:tests) with comprehensive test suite
 - Test runner: [tests/run_all_tests.py](mdc:tests/run_all_tests.py)
+- Troubleshooting guide: [VOICE_TROUBLESHOOTING.md](mdc:VOICE_TROUBLESHOOTING.md)
+
+### OpenAI Realtime API Integration
+- **Main package**: [openai_realtime_api/](mdc:openai_realtime_api/)
+  - Package initialization: [__init__.py](mdc:openai_realtime_api/__init__.py)
+  - Project documentation: [README.md](mdc:openai_realtime_api/README.md)
+  - Dependencies: [requirements.txt](mdc:openai_realtime_api/requirements.txt)
+  - Function calling guide: [WEATHER_FUNCTIONS.md](mdc:openai_realtime_api/WEATHER_FUNCTIONS.md)
+
+### Working Examples and Demos
+- **Examples directory**: [openai_realtime_api/examples/](mdc:openai_realtime_api/examples/)
+  - **Speech-to-speech with weather**: [speech_to_speech_example.py](mdc:openai_realtime_api/examples/speech_to_speech_example.py)
+  - **Weather function calling**: [weather_chat_completion_example.py](mdc:openai_realtime_api/examples/weather_chat_completion_example.py)
+  - **Weather testing**: [weather_test_example.py](mdc:openai_realtime_api/examples/weather_test_example.py)
+  - **Transcription demo**: [transcription_example.py](mdc:openai_realtime_api/examples/transcription_example.py)
+  - **Audio testing**: [audio_test.py](mdc:openai_realtime_api/examples/audio_test.py)
+
+### Client Components
+- **WebSocket client**: [openai_realtime_api/websocket_client/](mdc:openai_realtime_api/websocket_client/)
+- **WebRTC client**: [openai_realtime_api/webrtc_client/](mdc:openai_realtime_api/webrtc_client/)
+- **Server components**: [openai_realtime_api/server/](mdc:openai_realtime_api/server/)
+- **Documentation**: [openai_realtime_api/docs/](mdc:openai_realtime_api/docs/)
+- **API tests**: [openai_realtime_api/tests/](mdc:openai_realtime_api/tests/)
 
 ## 🔄 Git Workflow Automation
 
@@ -62,6 +87,8 @@ git push
   - "Fix configuration tests to prevent real API calls during testing"
   - "Add comprehensive test suite for voice agent components"
   - "Update README with conda environment setup instructions"
+  - "Fix speech-to-speech audio feedback loop and connection issues"
+  - "Add weather function calling with Chat Completions API format"
 
 ### Git Status Checks
 Always check status before committing:
@@ -76,7 +103,8 @@ git diff --staged
 1. **Activate conda environment**: `conda activate ai-researcher`
 2. **Run all tests**: `python tests/run_all_tests.py`
 3. **Run specific component tests**: `python -m pytest tests/test_[component].py -v`
-4. **Verify test coverage**: Ensure critical functionality is tested
+4. **Test Realtime API examples**: `cd openai_realtime_api/examples && python [example_name].py`
+5. **Verify test coverage**: Ensure critical functionality is tested
 
 ### Test Suite Components
 - [tests/test_configuration.py](mdc:tests/test_configuration.py) - Environment and API key validation
@@ -86,6 +114,12 @@ git diff --staged
 - [tests/test_agent_logic.py](mdc:tests/test_agent_logic.py) - AI agent and memory management
 - [tests/test_main_loop.py](mdc:tests/test_main_loop.py) - Main conversation flow
 - [tests/test_integration.py](mdc:tests/test_integration.py) - End-to-end integration tests
+
+### Realtime API Testing
+- **Weather function calling**: Test both current weather and forecast functions
+- **Audio feedback prevention**: Ensure no assistant self-conversation loops
+- **Connection stability**: Verify WebSocket connections remain stable
+- **Function schema validation**: Test Chat Completions API compatible formats
 
 ## 🔄 Cursor Update Checking
 
@@ -125,7 +159,12 @@ python -m pytest tests/test_configuration.py -v
 # 3. Run all tests
 python tests/run_all_tests.py
 
-# 4. Git workflow (after successful changes)
+# 4. Test Realtime API examples
+cd openai_realtime_api/examples
+python speech_to_speech_example.py
+python weather_chat_completion_example.py
+
+# 5. Git workflow (after successful changes)
 git add .
 git commit -m "Your descriptive commit message"
 git push
@@ -136,7 +175,7 @@ git push
 # Check environment
 conda info --envs
 python --version
-pip list | findstr -i "openai elevenlabs mem0 pygame pyaudio crewai"
+pip list | findstr -i "openai elevenlabs mem0 pygame pyaudio crewai websocket"
 
 # Check git status
 git status
@@ -144,6 +183,26 @@ git log --oneline -5
 
 # Test specific functionality
 python voice_agent_original.py  # (with proper API keys in .env)
+
+# Test Realtime API functionality
+cd openai_realtime_api/examples
+python audio_test.py
+python transcription_example.py
+```
+
+### Weather Function Testing
+```bash
+# Navigate to examples directory
+cd openai_realtime_api/examples
+
+# Test current weather function
+python weather_test_example.py
+
+# Test Chat Completions API format
+python weather_chat_completion_example.py
+
+# Full speech-to-speech with weather
+python speech_to_speech_example.py
 ```
 
 ## 🚨 Critical Reminders
@@ -154,6 +213,9 @@ python voice_agent_original.py  # (with proper API keys in .env)
 4. **Keep Cursor updated for optimal performance**
 5. **Verify all API keys are properly set in `.env` file**
 6. **Clean up temporary files after testing**
+7. **Test Realtime API examples before committing changes**
+8. **Ensure WebSocket connections are stable**
+9. **Prevent audio feedback loops in speech-to-speech demos**
 
 ## 🎯 Success Metrics
 
@@ -163,4 +225,26 @@ python voice_agent_original.py  # (with proper API keys in .env)
 - ✅ Changes pushed to remote repository
 - ✅ No temporary files left in workspace
 - ✅ Cursor IDE running latest version
+- ✅ Realtime API examples working without errors
+- ✅ Weather function calling operational
+- ✅ Speech-to-speech demos stable (no feedback loops)
+- ✅ WebSocket connections maintained properly
+
+## 📊 Feature Status
+
+### Completed Features
+- ✅ Basic voice agent functionality
+- ✅ OpenAI Realtime API integration
+- ✅ Weather function calling (Chat Completions format)
+- ✅ Speech-to-speech conversation with weather
+- ✅ Audio feedback loop prevention
+- ✅ Connection stability improvements
+- ✅ Comprehensive test suite
+- ✅ Documentation and troubleshooting guides
+
+### Active Components
+- 🟢 **voice_agent_original.py** - Main voice agent
+- 🟢 **speech_to_speech_example.py** - Real-time voice conversation
+- 🟢 **weather_chat_completion_example.py** - Weather function demo
+- 🟢 **All test suites** - Comprehensive testing coverage
 

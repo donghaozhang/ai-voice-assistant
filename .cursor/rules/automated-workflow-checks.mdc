@@ -29,6 +29,14 @@ git status --porcelain
 # If dirty working tree → prompt to commit or stash
 ```
 
+**4. Realtime API Connectivity Check**
+```bash
+# Verify API key is configured
+test -f .env && grep -q "OPENAI_API_KEY" .env
+# Check WebSocket dependencies
+python -c "import websocket; import asyncio; print('WebSocket ready')"
+```
+
 ## 🔄 Post-Coding Automation Workflow
 
 ### After Every Successful Code Change
@@ -39,6 +47,15 @@ git status --porcelain
 ```bash
 # Auto-run relevant tests based on changed files
 python tests/run_all_tests.py
+
+# If Realtime API files changed, run specific tests
+if [[ $(git diff --name-only HEAD~1 | grep -c "openai_realtime_api") -gt 0 ]]; then
+    cd openai_realtime_api/examples
+    python weather_test_example.py
+    python audio_test.py
+    cd ../..
+fi
+
 # STOP if tests fail - do not proceed to git operations
 ```
 
@@ -49,7 +66,10 @@ git add .
 
 # Auto-generate commit message based on changes
 # Format: "[Component] Brief description - Test results"
-# Example: "[Configuration] Fix MemoryClient mocking - All 11 tests pass"
+# Examples:
+# "[Realtime API] Fix audio feedback loop - Speech-to-speech working"
+# "[Weather Functions] Add Chat Completions format - All function tests pass"
+# "[Configuration] Fix MemoryClient mocking - All 11 tests pass"
 git commit -m "[Auto-generated descriptive message]"
 
 # Auto-push to remote
@@ -60,6 +80,7 @@ git push
 ```bash
 # Remove temporary test files
 rm -f temp_*.wav temp_*.mp3
+rm -f openai_realtime_api/examples/temp_*.wav
 # Clear __pycache__ directories
 find . -type d -name "__pycache__" -exec rm -rf {} +
 ```
@@ -74,6 +95,9 @@ find . -type d -name "__pycache__" -exec rm -rf {} +
 - ✅ No syntax errors in Python files
 - ✅ No temporary files in workspace
 - ✅ [README.md](mdc:README.md) is up-to-date if structure changed
+- ✅ Realtime API examples functional (if modified)
+- ✅ WebSocket connections stable
+- ✅ No audio feedback loops in speech demos
 
 **Auto-Rejection Criteria:**
 - ❌ Wrong conda environment active
@@ -81,14 +105,24 @@ find . -type d -name "__pycache__" -exec rm -rf {} +
 - ❌ Syntax errors in modified files
 - ❌ Missing docstrings in new functions
 - ❌ Uncommitted changes to critical files
+- ❌ Realtime API connection failures
+- ❌ Audio feedback loops detected
+- ❌ Function calling schema validation errors
 
 ### Test Coverage Requirements
 
-**For [voice_agent_original.py](mdc:voice_agent_original.py) modifications:**
-- Must have corresponding tests in [tests/](mdc:tests) directory
+**For Core Voice Agent modifications:**
+- [voice_agent_original.py](mdc:voice_agent_original.py) → Update [tests/test_configuration.py](mdc:tests/test_configuration.py)
 - Configuration changes → Update [tests/test_configuration.py](mdc:tests/test_configuration.py)
 - New functions → Add to appropriate test file
 - Integration changes → Update [tests/test_integration.py](mdc:tests/test_integration.py)
+
+**For Realtime API modifications:**
+- [openai_realtime_api/examples/](mdc:openai_realtime_api/examples/) changes → Test all affected examples
+- Weather function changes → Run [weather_test_example.py](mdc:openai_realtime_api/examples/weather_test_example.py)
+- Speech-to-speech changes → Test [speech_to_speech_example.py](mdc:openai_realtime_api/examples/speech_to_speech_example.py)
+- WebSocket client changes → Test connection stability
+- Audio processing changes → Run [audio_test.py](mdc:openai_realtime_api/examples/audio_test.py)
 
 ## 🔧 Automated Cursor Maintenance
 
@@ -105,6 +139,7 @@ echo "$(date): Checking Cursor updates..." >> ~/.cursor/update-check.log
 - Verify Python extension is active and updated
 - Check Git extension functionality
 - Validate workspace configuration
+- Ensure WebSocket and audio libraries are accessible
 
 **3. Environment Sync:**
 ```bash
@@ -112,6 +147,9 @@ echo "$(date): Checking Cursor updates..." >> ~/.cursor/update-check.log
 conda activate ai-researcher
 pip list > current-packages.txt
 diff current-packages.txt requirements.txt
+
+# Check Realtime API dependencies
+python -c "import openai; import websocket; import asyncio; print('All deps available')"
 ```
 
 ### Weekly Maintenance (Auto-Prompt)
@@ -121,6 +159,8 @@ diff current-packages.txt requirements.txt
 - Extension updates review
 - Dependency updates: `pip list --outdated`
 - Git repository cleanup: `git gc`
+- Realtime API compatibility check
+- Audio system health verification
 
 ## 🚨 Automated Failure Recovery
 
@@ -139,9 +179,30 @@ python -m pytest tests/test_configuration.py -v --tb=short
 # For integration test failures:
 python -m pytest tests/test_integration.py -v --tb=short
 
+# For Realtime API failures:
+cd openai_realtime_api/examples
+python audio_test.py
+python weather_test_example.py
+
 # Check environment issues:
 conda activate ai-researcher
 python --version
+```
+
+**3. Realtime API Specific Recovery:**
+```bash
+# Test WebSocket connectivity
+python -c "import websocket; print('WebSocket module working')"
+
+# Check API key configuration
+test -f .env && echo "API key file exists" || echo "Missing .env file"
+
+# Test audio system
+python -c "import pyaudio; print('Audio system available')"
+
+# Verify no feedback loops
+cd openai_realtime_api/examples
+python speech_to_speech_example.py --test-mode
 ```
 
 ### If Git Operations Fail
@@ -169,11 +230,14 @@ git stash push -m "Auto-backup $(date)"
 - Files modified and test results
 - Git operations performed
 - Cursor update status
+- Realtime API test results
+- WebSocket connection stability
+- Audio feedback incidents
 
 **Session End Report:**
 ```bash
 # Auto-generate session summary
-echo "Session $(date): Environment=ai-researcher, Tests=PASS/FAIL, Commits=N, Cursor=UPDATED/CURRENT" >> .development-log.txt
+echo "Session $(date): Environment=ai-researcher, Tests=PASS/FAIL, Commits=N, Cursor=UPDATED/CURRENT, RealtimeAPI=FUNCTIONAL/ISSUES" >> .development-log.txt
 ```
 
 ### Weekly Quality Report
@@ -183,6 +247,9 @@ echo "Session $(date): Environment=ai-researcher, Tests=PASS/FAIL, Commits=N, Cu
 - Commit frequency and quality
 - Cursor update compliance
 - Environment consistency metrics
+- Realtime API reliability statistics
+- Audio feedback incident reports
+- WebSocket connection success rates
 
 ## 🎯 Automation Success Criteria
 
@@ -193,6 +260,10 @@ echo "Session $(date): Environment=ai-researcher, Tests=PASS/FAIL, Commits=N, Cu
 - ✅ Cursor updates checked and applied
 - ✅ Workspace cleaned automatically
 - ✅ Quality metrics logged
+- ✅ Realtime API examples functional
+- ✅ WebSocket connections stable
+- ✅ No audio feedback loops detected
+- ✅ Weather function calling operational
 
 **Red Flag Triggers (Stop Automation):**
 - ❌ Wrong environment detected
@@ -200,6 +271,53 @@ echo "Session $(date): Environment=ai-researcher, Tests=PASS/FAIL, Commits=N, Cu
 - ❌ Git operation failures
 - ❌ Cursor malfunction detected
 - ❌ Critical file corruption
+- ❌ Realtime API connection failures
+- ❌ Audio feedback loops persistent
+- ❌ WebSocket connection instability
+- ❌ Function calling schema errors
 
-This automated workflow ensures consistent, high-quality development practices while minimizing manual oversight requirements.
+## 🔍 Automated Code Quality Checks
+
+### Pre-Commit Validation
+
+**Core Voice Agent Files:**
+```bash
+# Check voice_agent_original.py syntax
+python -m py_compile voice_agent_original.py
+
+# Validate imports and dependencies
+python -c "import voice_agent_original; print('Core agent imports OK')"
+```
+
+**Realtime API Components:**
+```bash
+# Check all examples compile
+for file in openai_realtime_api/examples/*.py; do
+    python -m py_compile "$file"
+done
+
+# Test WebSocket client initialization
+python -c "from openai_realtime_api.websocket_client.realtime_client import RealtimeConversation; print('Client imports OK')"
+
+# Validate function schemas
+cd openai_realtime_api/examples
+python -c "import weather_chat_completion_example; print('Weather schemas valid')"
+```
+
+### Post-Commit Verification
+
+**Functional Testing:**
+```bash
+# Quick smoke test of main components
+python -c "import voice_agent_original; print('Core agent loadable')"
+
+# Test Realtime API basic functionality
+cd openai_realtime_api/examples
+timeout 10s python audio_test.py || echo "Audio test completed/timeout"
+
+# Verify no syntax regressions
+python -m py_compile voice_agent.py voice_agent_original.py
+```
+
+This automated workflow ensures consistent, high-quality development practices while maintaining the reliability and functionality of both the core voice agent and the new OpenAI Realtime API integration components.
 
