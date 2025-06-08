@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-OpenAI Realtime API - Speech-to-Speech Example
+OpenAI Realtime API - Speech-to-Speech Example with Function Calling
 
 This example demonstrates how to use the OpenAI Realtime API for
-real-time speech-to-speech conversations using WebSocket connections.
+real-time speech-to-speech conversations with function calling capabilities.
 
 Features:
 - Real-time voice conversation
@@ -11,6 +11,7 @@ Features:
 - Audio recording and playback
 - Session management
 - Error handling
+- Weather function calling
 
 Usage:
     python speech_to_speech_example.py
@@ -22,10 +23,13 @@ Requirements:
 """
 
 import asyncio
+import json
 import os
 import sys
 import time
 from pathlib import Path
+from datetime import datetime
+import random
 
 # Add parent directory to path
 sys.path.append(str(Path(__file__).parent.parent))
@@ -46,15 +50,76 @@ except ImportError as e:
     sys.exit(1)
 
 
+class WeatherService:
+    """Mock weather service for demonstration purposes."""
+    
+    @staticmethod
+    def get_current_weather(location: str) -> dict:
+        """
+        Get current weather for a location.
+        In a real implementation, this would call a weather API.
+        """
+        # Mock weather data
+        weather_conditions = [
+            "sunny", "partly cloudy", "cloudy", "light rain", 
+            "heavy rain", "snow", "thunderstorm", "foggy"
+        ]
+        
+        temperature = random.randint(-10, 35)  # Celsius
+        condition = random.choice(weather_conditions)
+        humidity = random.randint(30, 90)
+        
+        return {
+            "location": location,
+            "temperature": temperature,
+            "condition": condition,
+            "humidity": humidity,
+            "timestamp": datetime.now().isoformat()
+        }
+    
+    @staticmethod
+    def get_weather_forecast(location: str, days: int = 3) -> dict:
+        """
+        Get weather forecast for a location.
+        In a real implementation, this would call a weather API.
+        """
+        forecast = []
+        weather_conditions = [
+            "sunny", "partly cloudy", "cloudy", "light rain", 
+            "heavy rain", "snow", "thunderstorm"
+        ]
+        
+        for day in range(days):
+            temp_high = random.randint(15, 35)
+            temp_low = random.randint(-5, temp_high - 5)
+            condition = random.choice(weather_conditions)
+            
+            forecast.append({
+                "day": day + 1,
+                "high_temperature": temp_high,
+                "low_temperature": temp_low,
+                "condition": condition,
+                "chance_of_rain": random.randint(0, 100)
+            })
+        
+        return {
+            "location": location,
+            "forecast_days": days,
+            "forecast": forecast,
+            "timestamp": datetime.now().isoformat()
+        }
+
+
 class VoiceConversationDemo:
     """
-    Demonstration of voice conversation using OpenAI Realtime API.
+    Demonstration of voice conversation using OpenAI Realtime API with function calling.
     """
     
     def __init__(self):
         self.client = None
         self.conversation_active = False
         self.speaking = False
+        self.weather_service = WeatherService()
         
     async def setup(self):
         """Initialize the conversation client."""
@@ -67,15 +132,66 @@ class VoiceConversationDemo:
                 model="gpt-4o-realtime-preview-2024-12-17"
             )
             
-            # Set up custom instructions
+            # Set up custom instructions with weather capabilities
             instructions = """
             You are a friendly AI assistant engaged in a natural voice conversation.
+            You have access to weather information and can help users with weather queries.
+            
             Keep your responses conversational, concise, and engaging.
+            When providing weather information, be descriptive and helpful.
             Ask follow-up questions to keep the conversation flowing.
             Respond as if you're talking to a friend.
+            
+            If someone asks about weather, use the available weather functions to get current 
+            conditions or forecasts for the location they mention.
             """
             
-            self.client.update_session({"instructions": instructions})
+            # Configure session with weather functions
+            session_config = {
+                "instructions": instructions,
+                "tools": [
+                    {
+                        "type": "function",
+                        "name": "get_current_weather",
+                        "description": "Get the current weather conditions for a specific location.",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {
+                                "location": {
+                                    "type": "string",
+                                    "description": "The city and state/country, e.g. 'San Francisco, CA' or 'London, UK'"
+                                }
+                            },
+                            "required": ["location"]
+                        }
+                    },
+                    {
+                        "type": "function",
+                        "name": "get_weather_forecast",
+                        "description": "Get weather forecast for a specific location over the next few days.",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {
+                                "location": {
+                                    "type": "string",
+                                    "description": "The city and state/country, e.g. 'San Francisco, CA' or 'London, UK'"
+                                },
+                                "days": {
+                                    "type": "integer",
+                                    "description": "Number of days for the forecast (1-7)",
+                                    "minimum": 1,
+                                    "maximum": 7,
+                                    "default": 3
+                                }
+                            },
+                            "required": ["location"]
+                        }
+                    }
+                ],
+                "tool_choice": "auto"
+            }
+            
+            self.client.update_session(session_config)
             
             # Register event handlers
             self.setup_event_handlers()
@@ -83,7 +199,7 @@ class VoiceConversationDemo:
             # Connect to the API
             await self.client.connect()
             
-            print("✅ Connected to OpenAI Realtime API")
+            print("✅ Connected to OpenAI Realtime API with weather functions")
             return True
             
         except Exception as e:
@@ -109,6 +225,16 @@ class VoiceConversationDemo:
             print("🤖 Assistant is responding...")
         
         def on_response_completed(data):
+            # Check if this response contains function calls
+            response = data.get("response", {})
+            output = response.get("output", [])
+            
+            # Process any function calls
+            for item in output:
+                if item.get("type") == "function_call":
+                    asyncio.create_task(self.handle_function_call(item))
+                    return  # Don't show "ready for input" yet
+            
             print("✅ Assistant finished responding")
             print("🎤 Ready for next input - Hold SPACE to speak")
         
@@ -139,10 +265,71 @@ class VoiceConversationDemo:
         self.client.on("error", on_error)
         self.client.on("disconnected", on_disconnected)
     
+    async def handle_function_call(self, function_call_item):
+        """Handle function calls from the assistant."""
+        try:
+            function_name = function_call_item.get("name")
+            call_id = function_call_item.get("call_id")
+            arguments_str = function_call_item.get("arguments", "{}")
+            
+            print(f"🔧 Function call: {function_name}")
+            print(f"📋 Arguments: {arguments_str}")
+            
+            # Parse function arguments
+            try:
+                arguments = json.loads(arguments_str)
+            except json.JSONDecodeError:
+                print(f"❌ Invalid function arguments: {arguments_str}")
+                return
+            
+            # Execute the appropriate function
+            if function_name == "get_current_weather":
+                location = arguments.get("location", "Unknown")
+                print(f"🌤️  Getting current weather for {location}...")
+                weather_data = self.weather_service.get_current_weather(location)
+                result = {
+                    "location": weather_data["location"],
+                    "temperature": f"{weather_data['temperature']}°C",
+                    "condition": weather_data["condition"],
+                    "humidity": f"{weather_data['humidity']}%"
+                }
+                
+            elif function_name == "get_weather_forecast":
+                location = arguments.get("location", "Unknown")
+                days = arguments.get("days", 3)
+                print(f"📅 Getting {days}-day weather forecast for {location}...")
+                forecast_data = self.weather_service.get_weather_forecast(location, days)
+                result = {
+                    "location": forecast_data["location"],
+                    "forecast_days": forecast_data["forecast_days"],
+                    "forecast": forecast_data["forecast"]
+                }
+                
+            else:
+                print(f"❌ Unknown function: {function_name}")
+                return
+            
+            # Send function result back to the assistant
+            print(f"📤 Sending function result...")
+            self.client.send_event("conversation.item.create", {
+                "item": {
+                    "type": "function_call_output",
+                    "call_id": call_id,
+                    "output": json.dumps(result)
+                }
+            })
+            
+            # Request a new response with the function results
+            print("🎯 Requesting response with function results...")
+            self.client.send_event("response.create")
+            
+        except Exception as e:
+            print(f"❌ Error handling function call: {e}")
+    
     def print_instructions(self):
         """Print usage instructions."""
         print("\n" + "="*60)
-        print("🎙️  VOICE CONVERSATION DEMO")
+        print("🎙️  VOICE CONVERSATION DEMO WITH WEATHER")
         print("="*60)
         print("📋 CONTROLS:")
         print("   🔥 Hold SPACE to speak")
@@ -151,9 +338,15 @@ class VoiceConversationDemo:
         print("   🚪 Type 'quit' or 'exit' to end conversation")
         print("   ❓ Type 'help' for this menu")
         print("="*60)
+        print("🌤️  WEATHER FEATURES:")
+        print("   - Ask for current weather: 'What's the weather in Paris?'")
+        print("   - Ask for forecasts: 'Give me a 5-day forecast for Tokyo'")
+        print("   - Natural language works: 'Is it raining in London?'")
+        print("="*60)
         print("💡 Tips:")
         print("   - Speak clearly into your microphone")
         print("   - Wait for the assistant to finish before speaking")
+        print("   - Try asking about weather in different cities")
         print("   - Keep responses natural and conversational")
         print("="*60)
     
@@ -229,10 +422,11 @@ class VoiceConversationDemo:
             self.conversation_active = True
             self.print_instructions()
             
-            print("\n🎉 Conversation started!")
+            print("\n🎉 Weather-enabled conversation started!")
             print("🎮 Controls:")
             print("   - Hold SPACE to speak")
             print("   - Press Ctrl+C to exit")
+            print("   - Try asking: 'What's the weather like in New York?'")
             
             # Start keyboard handling
             keyboard_task = asyncio.create_task(self.handle_keyboard_input())
@@ -325,7 +519,7 @@ def check_requirements():
 
 async def main():
     """Main function."""
-    print("🚀 Starting OpenAI Realtime API Speech-to-Speech Demo")
+    print("🚀 Starting OpenAI Realtime API Speech-to-Speech Demo with Weather Functions")
     
     # Check requirements
     if not check_requirements():
