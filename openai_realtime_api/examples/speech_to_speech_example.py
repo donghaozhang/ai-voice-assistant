@@ -25,13 +25,25 @@ import asyncio
 import os
 import sys
 import time
-import keyboard
 from pathlib import Path
 
 # Add parent directory to path
 sys.path.append(str(Path(__file__).parent.parent))
 
-from websocket_client.realtime_client import RealtimeConversation
+# Check for required dependencies
+try:
+    import keyboard
+except ImportError:
+    print("❌ Error: 'keyboard' module not found.")
+    print("💡 Install it with: pip install keyboard")
+    sys.exit(1)
+
+try:
+    from websocket_client.realtime_client import RealtimeConversation
+except ImportError as e:
+    print(f"❌ Error importing RealtimeConversation: {e}")
+    print("💡 Make sure you've installed all requirements: pip install -r requirements.txt")
+    sys.exit(1)
 
 
 class VoiceConversationDemo:
@@ -81,48 +93,50 @@ class VoiceConversationDemo:
     def setup_event_handlers(self):
         """Set up event handlers for the conversation."""
         
-        @self.client.on("connected")
         def on_connected(data):
             print("🔗 Connected to OpenAI Realtime API")
         
-        @self.client.on("session_created")
         def on_session_created(data):
             session_id = data.get("session", {}).get("id", "unknown")
             print(f"🆔 Session created: {session_id}")
         
-        @self.client.on("transcription")
         def on_transcription(data):
             text = data.get("text", "")
             if text.strip():
                 print(f"🎤 You said: {text}")
         
-        @self.client.on("response_started")
         def on_response_started(data):
             print("🤖 Assistant is responding...")
         
-        @self.client.on("response_completed")
         def on_response_completed(data):
             print("✅ Assistant finished responding")
         
-        @self.client.on("recording_started")
         def on_recording_started(data):
             print("🔴 Recording started - speak now!")
             self.speaking = True
         
-        @self.client.on("recording_stopped")
         def on_recording_stopped(data):
             print("⏹️  Recording stopped - processing...")
             self.speaking = False
         
-        @self.client.on("error")
         def on_error(data):
             error_msg = data.get("error", "Unknown error")
             print(f"❌ Error: {error_msg}")
         
-        @self.client.on("disconnected")
         def on_disconnected(data):
             print("🔌 Disconnected from API")
             self.conversation_active = False
+        
+        # Register all handlers
+        self.client.on("connected", on_connected)
+        self.client.on("session_created", on_session_created)
+        self.client.on("transcription", on_transcription)
+        self.client.on("response_started", on_response_started)
+        self.client.on("response_completed", on_response_completed)
+        self.client.on("recording_started", on_recording_started)
+        self.client.on("recording_stopped", on_recording_stopped)
+        self.client.on("error", on_error)
+        self.client.on("disconnected", on_disconnected)
     
     def print_instructions(self):
         """Print usage instructions."""
@@ -145,6 +159,7 @@ class VoiceConversationDemo:
     async def handle_keyboard_input(self):
         """Handle keyboard input for push-to-talk."""
         try:
+            print("📌 Keyboard controls active - Hold SPACE to speak")
             while self.conversation_active:
                 # Check for spacebar press (push-to-talk)
                 if keyboard.is_pressed('space'):
@@ -163,20 +178,22 @@ class VoiceConversationDemo:
                 
         except Exception as e:
             print(f"❌ Keyboard input error: {e}")
+            print("💡 Try running as administrator or check keyboard permissions")
     
-    async def handle_text_input(self):
+    async def handle_text_commands(self):
         """Handle text input commands."""
         try:
+            print("💬 Text commands available - type 'help' for options")
+            
             while self.conversation_active:
-                # Use asyncio to get input without blocking
                 try:
-                    # Simple input handling (non-blocking would require more complex setup)
-                    await asyncio.sleep(0.5)
-                    
-                    # Check if there's any input available
-                    # This is a simplified version - in production you'd use proper async input
+                    # This is a simplified version - for a production app, you'd want 
+                    # proper async input handling
+                    await asyncio.sleep(1)
                     
                 except KeyboardInterrupt:
+                    print("\n⚠️  Stopping conversation...")
+                    self.conversation_active = False
                     break
                     
         except Exception as e:
@@ -211,20 +228,27 @@ class VoiceConversationDemo:
             self.conversation_active = True
             self.print_instructions()
             
-            print("\n🎉 Conversation started! Hold SPACE to speak...")
+            print("\n🎉 Conversation started!")
+            print("🎮 Controls:")
+            print("   - Hold SPACE to speak")
+            print("   - Press Ctrl+C to exit")
             
             # Start keyboard handling
             keyboard_task = asyncio.create_task(self.handle_keyboard_input())
+            text_task = asyncio.create_task(self.handle_text_commands())
             
             # Keep the conversation running
-            while self.conversation_active:
-                await asyncio.sleep(1)
+            try:
+                while self.conversation_active:
+                    await asyncio.sleep(1)
+            except KeyboardInterrupt:
+                print("\n⚠️  Conversation interrupted by user")
+                self.conversation_active = False
             
-            # Cancel keyboard task
+            # Cancel tasks
             keyboard_task.cancel()
+            text_task.cancel()
             
-        except KeyboardInterrupt:
-            print("\n⚠️  Conversation interrupted by user")
         except Exception as e:
             print(f"❌ Conversation error: {e}")
         finally:
@@ -233,6 +257,8 @@ class VoiceConversationDemo:
     async def cleanup(self):
         """Clean up resources."""
         if self.client:
+            if self.client.recording:
+                self.client.stop_recording()
             self.client.disconnect()
         print("🧹 Cleanup completed")
     
@@ -257,6 +283,7 @@ def check_requirements():
     if not os.getenv("OPENAI_API_KEY"):
         print("❌ Error: OPENAI_API_KEY environment variable not found")
         print("💡 Set your API key: export OPENAI_API_KEY='your-api-key-here'")
+        print("💡 On Windows: set OPENAI_API_KEY=your-api-key-here")
         return False
     
     # Check required packages
@@ -266,7 +293,30 @@ def check_requirements():
         import keyboard
     except ImportError as e:
         print(f"❌ Error: Missing required package: {e}")
-        print("💡 Install requirements: pip install pyaudio websocket-client keyboard")
+        print("💡 Install requirements: pip install -r requirements.txt")
+        print("💡 Or install individually: pip install pyaudio websocket-client keyboard")
+        return False
+    
+    # Check microphone access
+    try:
+        import pyaudio
+        p = pyaudio.PyAudio()
+        
+        # Try to open microphone
+        stream = p.open(
+            format=pyaudio.paInt16,
+            channels=1,
+            rate=24000,
+            input=True,
+            frames_per_buffer=1024
+        )
+        stream.close()
+        p.terminate()
+        
+    except Exception as e:
+        print(f"⚠️  Warning: Microphone access issue: {e}")
+        print("💡 Make sure your microphone is connected and accessible")
+        print("💡 On some systems, you may need to run as administrator")
         return False
     
     return True
@@ -278,7 +328,10 @@ async def main():
     
     # Check requirements
     if not check_requirements():
+        print("\n❌ Requirements check failed. Please fix the issues above and try again.")
         return
+    
+    print("✅ All requirements met!")
     
     # Create and run demo
     demo = VoiceConversationDemo()
@@ -293,4 +346,5 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         print("\n⚠️  Demo interrupted by user")
     except Exception as e:
-        print(f"❌ Demo failed: {e}") 
+        print(f"❌ Demo failed: {e}")
+        print("💡 Make sure all dependencies are installed and your API key is set") 
