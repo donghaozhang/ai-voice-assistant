@@ -152,39 +152,45 @@ class VoiceConversationDemo:
                 "tools": [
                     {
                         "type": "function",
-                        "name": "get_current_weather",
-                        "description": "Get the current weather conditions for a specific location.",
-                        "parameters": {
-                            "type": "object",
-                            "properties": {
-                                "location": {
-                                    "type": "string",
-                                    "description": "The city and state/country, e.g. 'San Francisco, CA' or 'London, UK'"
-                                }
-                            },
-                            "required": ["location"]
+                        "function": {
+                            "name": "get_current_weather",
+                            "description": "Get the current weather conditions for a specific location.",
+                            "parameters": {
+                                "type": "object",
+                                "properties": {
+                                    "location": {
+                                        "type": "string",
+                                        "description": "The city and state/country, e.g. 'San Francisco, CA' or 'London, UK'"
+                                    }
+                                },
+                                "required": ["location"],
+                                "additionalProperties": False
+                            }
                         }
                     },
                     {
                         "type": "function",
-                        "name": "get_weather_forecast",
-                        "description": "Get weather forecast for a specific location over the next few days.",
-                        "parameters": {
-                            "type": "object",
-                            "properties": {
-                                "location": {
-                                    "type": "string",
-                                    "description": "The city and state/country, e.g. 'San Francisco, CA' or 'London, UK'"
+                        "function": {
+                            "name": "get_weather_forecast",
+                            "description": "Get weather forecast for a specific location over the next few days.",
+                            "parameters": {
+                                "type": "object",
+                                "properties": {
+                                    "location": {
+                                        "type": "string",
+                                        "description": "The city and state/country, e.g. 'San Francisco, CA' or 'London, UK'"
+                                    },
+                                    "days": {
+                                        "type": "integer",
+                                        "description": "Number of days for the forecast (1-7)",
+                                        "minimum": 1,
+                                        "maximum": 7,
+                                        "default": 3
+                                    }
                                 },
-                                "days": {
-                                    "type": "integer",
-                                    "description": "Number of days for the forecast (1-7)",
-                                    "minimum": 1,
-                                    "maximum": 7,
-                                    "default": 3
-                                }
-                            },
-                            "required": ["location"]
+                                "required": ["location", "days"],
+                                "additionalProperties": False
+                            }
                         }
                     }
                 ],

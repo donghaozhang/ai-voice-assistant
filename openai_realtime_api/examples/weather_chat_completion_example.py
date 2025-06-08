@@ -1,12 +1,18 @@
 #!/usr/bin/env python3
 """
-OpenAI Realtime API - Weather Function Calling Test
+OpenAI Realtime API - Weather Function Calling (Chat Completions Format)
 
-A simple test example to demonstrate weather function calling 
-using text input without audio complexity.
+This example demonstrates weather function calling using the Chat Completions API
+function calling format with strict mode and proper schema structure.
+
+Features:
+- Chat Completions API compatible function schemas
+- Strict mode enabled with additionalProperties: false
+- Proper required fields handling
+- Enhanced error handling
 
 Usage:
-    python weather_test_example.py
+    python weather_chat_completion_example.py
 
 Requirements:
     - OPENAI_API_KEY environment variable
@@ -27,7 +33,7 @@ from websocket_client.realtime_client import RealtimeConversation
 
 
 class WeatherService:
-    """Mock weather service for demonstration purposes."""
+    """Mock weather service following Chat Completions API format."""
     
     @staticmethod
     def get_current_weather(location: str) -> dict:
@@ -40,17 +46,20 @@ class WeatherService:
         temperature = random.randint(-10, 35)  # Celsius
         condition = random.choice(weather_conditions)
         humidity = random.randint(30, 90)
+        wind_speed = random.randint(0, 25)
         
         return {
             "location": location,
             "temperature": temperature,
             "condition": condition,
             "humidity": humidity,
+            "wind_speed": wind_speed,
+            "units": "metric",
             "timestamp": datetime.now().isoformat()
         }
     
     @staticmethod
-    def get_weather_forecast(location: str, days: int = 3) -> dict:
+    def get_weather_forecast(location: str, days: int) -> dict:
         """Get weather forecast for a location."""
         forecast = []
         weather_conditions = [
@@ -65,22 +74,25 @@ class WeatherService:
             
             forecast.append({
                 "day": day + 1,
+                "date": datetime.now().strftime(f"%Y-%m-%d"),
                 "high_temperature": temp_high,
                 "low_temperature": temp_low,
                 "condition": condition,
-                "chance_of_rain": random.randint(0, 100)
+                "chance_of_rain": random.randint(0, 100),
+                "wind_speed": random.randint(5, 20)
             })
         
         return {
             "location": location,
             "forecast_days": days,
             "forecast": forecast,
+            "units": "metric",
             "timestamp": datetime.now().isoformat()
         }
 
 
-class WeatherFunctionTest:
-    """Test weather function calling with the OpenAI Realtime API."""
+class ChatCompletionWeatherDemo:
+    """Weather function calling using Chat Completions API format."""
     
     def __init__(self):
         self.client = None
@@ -89,7 +101,7 @@ class WeatherFunctionTest:
         self.pending_function_call = None
         
     async def setup(self):
-        """Initialize the client with weather functions."""
+        """Initialize the client with Chat Completions API format."""
         try:
             # Create client
             self.client = RealtimeConversation(
@@ -99,57 +111,53 @@ class WeatherFunctionTest:
                 model="gpt-4o-realtime-preview-2024-12-17"
             )
             
-            # Configure session with weather functions
+            # Configure session with Chat Completions API format
             session_config = {
                 "instructions": """
-                You are a helpful weather assistant. When users ask about weather,
-                use the available weather functions to provide accurate information.
-                Be conversational and descriptive in your responses.
+                You are a professional weather assistant with access to real-time weather data.
+                When users ask about weather, use the available weather functions to provide 
+                accurate and detailed information.
+                
+                Always format temperature responses clearly and include relevant details like
+                humidity, wind speed, and conditions. Be conversational and helpful.
                 """,
                 "tools": [
                     {
                         "type": "function",
-                        "function": {
-                            "name": "get_current_weather",
-                            "description": "Get the current weather conditions for a specific location.",
-                            "parameters": {
-                                "type": "object",
-                                "properties": {
-                                    "location": {
-                                        "type": "string",
-                                        "description": "The city and state/country, e.g. 'San Francisco, CA' or 'London, UK'"
-                                    }
-                                },
-                                "required": ["location"],
-                                "additionalProperties": False
+                        "name": "get_current_weather",
+                        "description": "Get the current weather conditions for a specific location including temperature, humidity, wind speed, and conditions.",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {
+                                "location": {
+                                    "type": "string",
+                                    "description": "The city and state/country in the format 'City, Country' (e.g., 'Paris, France' or 'New York, NY, USA')"
+                                }
                             },
-                            "strict": True
+                            "required": ["location"],
+                            "additionalProperties": False
                         }
                     },
                     {
                         "type": "function",
-                        "function": {
-                            "name": "get_weather_forecast",
-                            "description": "Get weather forecast for a specific location over the next few days.",
-                            "parameters": {
-                                "type": "object",
-                                "properties": {
-                                    "location": {
-                                        "type": "string",
-                                        "description": "The city and state/country, e.g. 'San Francisco, CA' or 'London, UK'"
-                                    },
-                                    "days": {
-                                        "type": "integer",
-                                        "description": "Number of days for the forecast (1-7)",
-                                        "minimum": 1,
-                                        "maximum": 7,
-                                        "default": 3
-                                    }
+                        "name": "get_weather_forecast",
+                        "description": "Get detailed weather forecast for a specific location over multiple days including daily highs, lows, conditions, and precipitation chances.",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {
+                                "location": {
+                                    "type": "string",
+                                    "description": "The city and state/country in the format 'City, Country' (e.g., 'Paris, France' or 'New York, NY, USA')"
                                 },
-                                "required": ["location", "days"],
-                                "additionalProperties": False
+                                "days": {
+                                    "type": "integer",
+                                    "description": "Number of days for the forecast",
+                                    "minimum": 1,
+                                    "maximum": 7
+                                }
                             },
-                            "strict": True
+                            "required": ["location", "days"],
+                            "additionalProperties": False
                         }
                     }
                 ],
@@ -164,7 +172,7 @@ class WeatherFunctionTest:
             # Connect
             await self.client.connect()
             
-            print("✅ Connected to OpenAI Realtime API with weather functions")
+            print("✅ Connected to OpenAI Realtime API with Chat Completions format")
             return True
             
         except Exception as e:
@@ -175,7 +183,7 @@ class WeatherFunctionTest:
         """Set up event handlers."""
         
         def on_session_created(data):
-            print("🆔 Session created")
+            print("🆔 Session created with Chat Completions API format")
         
         def on_response_completed(data):
             # Check for function calls
@@ -201,7 +209,12 @@ class WeatherFunctionTest:
                 self.test_active = False
         
         def on_error(data):
-            print(f"❌ Error: {data.get('error', 'Unknown error')}")
+            error_msg = data.get("error", {})
+            if isinstance(error_msg, dict):
+                error_text = error_msg.get("message", "Unknown error")
+            else:
+                error_text = str(error_msg)
+            print(f"❌ Error: {error_text}")
             self.test_active = False
         
         # Register handlers
@@ -210,7 +223,7 @@ class WeatherFunctionTest:
         self.client.on("error", on_error)
     
     async def handle_function_call(self, function_call_item):
-        """Handle function calls from the assistant."""
+        """Handle function calls using Chat Completions format."""
         try:
             function_name = function_call_item.get("name")
             call_id = function_call_item.get("call_id")
@@ -219,43 +232,69 @@ class WeatherFunctionTest:
             print(f"🔧 Function call: {function_name}")
             print(f"📋 Arguments: {arguments_str}")
             
-            # Parse arguments
+            # Parse arguments with validation
             try:
                 arguments = json.loads(arguments_str)
-            except json.JSONDecodeError:
-                print(f"❌ Invalid function arguments: {arguments_str}")
+            except json.JSONDecodeError as e:
+                print(f"❌ Invalid function arguments JSON: {e}")
                 return
             
-            # Execute function
+            # Validate required parameters
             if function_name == "get_current_weather":
-                location = arguments.get("location", "Unknown")
+                if "location" not in arguments:
+                    print("❌ Missing required parameter: location")
+                    return
+                location = arguments["location"]
                 print(f"🌤️  Getting current weather for {location}...")
                 weather_data = self.weather_service.get_current_weather(location)
+                
+                # Format result according to Chat Completions format
                 result = {
+                    "success": True,
                     "location": weather_data["location"],
-                    "temperature": f"{weather_data['temperature']}°C",
-                    "condition": weather_data["condition"],
-                    "humidity": f"{weather_data['humidity']}%"
+                    "current_conditions": {
+                        "temperature": f"{weather_data['temperature']}°C",
+                        "condition": weather_data["condition"],
+                        "humidity": f"{weather_data['humidity']}%",
+                        "wind_speed": f"{weather_data['wind_speed']} km/h"
+                    },
+                    "timestamp": weather_data["timestamp"]
                 }
                 
             elif function_name == "get_weather_forecast":
-                location = arguments.get("location", "Unknown")
-                days = arguments.get("days", 3)
+                if "location" not in arguments or "days" not in arguments:
+                    print("❌ Missing required parameters: location and/or days")
+                    return
+                location = arguments["location"]
+                days = arguments["days"]
+                
+                # Validate days parameter
+                if not isinstance(days, int) or days < 1 or days > 7:
+                    print("❌ Invalid days parameter: must be integer between 1 and 7")
+                    return
+                
                 print(f"📅 Getting {days}-day weather forecast for {location}...")
                 forecast_data = self.weather_service.get_weather_forecast(location, days)
+                
+                # Format result according to Chat Completions format
                 result = {
+                    "success": True,
                     "location": forecast_data["location"],
                     "forecast_days": forecast_data["forecast_days"],
-                    "forecast": forecast_data["forecast"]
+                    "forecast": forecast_data["forecast"],
+                    "timestamp": forecast_data["timestamp"]
                 }
                 
             else:
                 print(f"❌ Unknown function: {function_name}")
-                return
+                result = {
+                    "success": False,
+                    "error": f"Unknown function: {function_name}"
+                }
             
-            print(f"📤 Sending function result: {result}")
+            print(f"📤 Sending function result...")
             
-            # Send function result back
+            # Send function result back using Chat Completions format
             self.client.send_event("conversation.item.create", {
                 "item": {
                     "type": "function_call_output",
@@ -311,27 +350,33 @@ class WeatherFunctionTest:
             print("⏰ Timeout waiting for response")
     
     async def run_tests(self):
-        """Run weather function calling tests."""
-        print("\n🧪 Running Weather Function Tests")
-        print("=" * 50)
+        """Run Chat Completions API format tests."""
+        print("\n🧪 Running Chat Completions API Format Weather Tests")
+        print("=" * 60)
         
-        # Test 1: Current weather
-        print("\n📍 Test 1: Current Weather")
-        await self.send_text_query("What's the current weather in Paris, France?")
-        
-        await asyncio.sleep(2)
-        
-        # Test 2: Weather forecast
-        print("\n📍 Test 2: Weather Forecast")
-        await self.send_text_query("Give me a 5-day weather forecast for Tokyo, Japan")
+        # Test 1: Current weather with detailed response
+        print("\n📍 Test 1: Current Weather (Detailed)")
+        await self.send_text_query("What's the current weather in Tokyo, Japan? Include all details.")
         
         await asyncio.sleep(2)
         
-        # Test 3: Different location
-        print("\n📍 Test 3: Different Location")
-        await self.send_text_query("Is it raining in London right now?")
+        # Test 2: Weather forecast with specific days
+        print("\n📍 Test 2: Weather Forecast (7 days)")
+        await self.send_text_query("Give me a detailed 7-day weather forecast for London, UK")
         
-        print("\n✅ All tests completed!")
+        await asyncio.sleep(2)
+        
+        # Test 3: Comparison query
+        print("\n📍 Test 3: Weather Comparison")
+        await self.send_text_query("Compare the current weather in New York and Paris")
+        
+        await asyncio.sleep(2)
+        
+        # Test 4: Natural language query
+        print("\n📍 Test 4: Natural Language Query")
+        await self.send_text_query("Should I bring an umbrella if I'm going to Berlin tomorrow?")
+        
+        print("\n✅ All Chat Completions API format tests completed!")
     
     async def cleanup(self):
         """Clean up resources."""
@@ -340,7 +385,7 @@ class WeatherFunctionTest:
         print("🧹 Cleanup completed")
     
     async def run(self):
-        """Run the complete test."""
+        """Run the complete demonstration."""
         try:
             if not await self.setup():
                 return
@@ -370,7 +415,7 @@ def check_requirements():
 
 async def main():
     """Main function."""
-    print("🚀 OpenAI Realtime API - Weather Function Calling Test")
+    print("🚀 OpenAI Realtime API - Chat Completions Format Weather Demo")
     
     if not check_requirements():
         print("\n❌ Requirements check failed")
@@ -378,17 +423,17 @@ async def main():
     
     print("✅ All requirements met!")
     
-    # Run test
-    test = WeatherFunctionTest()
-    await test.run()
+    # Run demonstration
+    demo = ChatCompletionWeatherDemo()
+    await demo.run()
     
-    print("👋 Test completed!")
+    print("👋 Chat Completions format demo completed!")
 
 
 if __name__ == "__main__":
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
-        print("\n⚠️  Test interrupted by user")
+        print("\n⚠️  Demo interrupted by user")
     except Exception as e:
-        print(f"❌ Test failed: {e}") 
+        print(f"❌ Demo failed: {e}") 

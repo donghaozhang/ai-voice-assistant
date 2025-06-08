@@ -1,10 +1,29 @@
 # Weather Function Calling with OpenAI Realtime API
 
-This documentation explains how to use function calling with the OpenAI Realtime API to create a weather-enabled voice assistant.
+This documentation explains how to use function calling with the OpenAI Realtime API to create a weather-enabled voice assistant, using both the original Realtime API format and the Chat Completions API format.
 
 ## Overview
 
-The OpenAI Realtime API supports function calling, which allows the AI assistant to execute custom code to extend its capabilities. In this implementation, we've added weather functions that the assistant can call to provide current weather information and forecasts.
+The OpenAI Realtime API supports function calling, which allows the AI assistant to execute custom code to extend its capabilities. This implementation provides weather functions in two formats:
+
+1. **Original Realtime API Format** - Native realtime function calling format
+2. **Chat Completions API Format** - Compatible with Chat Completions API standards
+
+## Key Differences Between Formats
+
+### Chat Completions API Inspired Format (Recommended)
+- **Schema Structure**: Flat structure with `"strict": true` and enhanced validation
+- **Required Fields**: All parameters must be in `"required"` array
+- **Validation**: `"additionalProperties": false` for strict validation
+- **Type Safety**: Enhanced parameter validation and error handling
+- **Compatibility**: Realtime API compatible with Chat Completions principles
+
+### Original Realtime API Format
+- **Schema Structure**: Flat structure with direct parameter definitions
+- **Required Fields**: Optional parameter handling
+- **Validation**: Basic validation without strict mode
+- **Type Safety**: Standard parameter validation
+- **Compatibility**: Native to Realtime API
 
 ## Features
 
@@ -12,334 +31,279 @@ The OpenAI Realtime API supports function calling, which allows the AI assistant
 - **Weather Forecasts**: Get multi-day weather forecasts (1-7 days)
 - **Natural Language**: Users can ask in natural language like "Is it raining in London?"
 - **Voice Integration**: Works with both voice and text input
-- **Mock Weather Service**: Includes a demonstration weather service
+- **Mock Weather Service**: Includes a demonstration weather service with realistic data
+- **Multiple Formats**: Support for both Chat Completions and Realtime API formats
 
-## How It Works
+## Files Overview
 
-### 1. Function Definition
+### Core Implementation Files
+- `speech_to_speech_example.py` - Main voice assistant with weather functions (Chat Completions format)
+- `weather_test_example.py` - Text-based weather testing example
+- `weather_chat_completion_example.py` - Comprehensive Chat Completions API format example
 
-Functions are defined in the session configuration with JSON Schema:
+### Function Schema Examples
 
+#### Chat Completions API Inspired Format (Realtime API Compatible)
+```json
+{
+    "type": "function",
+    "name": "get_current_weather",
+    "description": "Get the current weather conditions for a specific location including temperature, humidity, wind speed, and conditions.",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "location": {
+                "type": "string",
+                "description": "The city and state/country in the format 'City, Country' (e.g., 'Paris, France' or 'New York, NY, USA')"
+            }
+        },
+        "required": ["location"],
+        "additionalProperties": false
+    },
+    "strict": true
+}
+```
+
+#### Original Realtime API Format
+```json
+{
+    "type": "function",
+    "name": "get_current_weather",
+    "description": "Get the current weather conditions for a specific location.",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "location": {
+                "type": "string",
+                "description": "The city and state/country, e.g. 'San Francisco, CA' or 'London, UK'"
+            }
+        },
+        "required": ["location"]
+    }
+}
+```
+
+## Available Functions
+
+### get_current_weather(location: string)
+Gets current weather conditions including:
+- Temperature (Celsius)
+- Weather condition (sunny, cloudy, rainy, etc.)
+- Humidity percentage
+- Wind speed (km/h)
+- Timestamp
+
+**Example Usage:**
+- "What's the weather like in Paris?"
+- "Is it raining in Tokyo right now?"
+- "Tell me the current temperature in New York"
+
+### get_weather_forecast(location: string, days: integer)
+Gets multi-day weather forecast including:
+- Daily high and low temperatures
+- Weather conditions for each day
+- Chance of precipitation
+- Wind speed
+- Date information
+
+**Parameters:**
+- `location`: City and country (e.g., "London, UK")
+- `days`: Number of forecast days (1-7)
+
+**Example Usage:**
+- "Give me a 5-day forecast for London"
+- "What will the weather be like in Berlin next week?"
+- "Should I bring an umbrella to Paris tomorrow?"
+
+## Usage Examples
+
+### Voice Assistant Usage
+1. Start the speech-to-speech example:
+   ```bash
+   python openai_realtime_api/examples/speech_to_speech_example.py
+   ```
+
+2. Press and hold SPACE to speak, then ask:
+   - "What's the weather in Tokyo?"
+   - "Give me a 3-day forecast for Paris"
+   - "Is it going to rain in London tomorrow?"
+
+### Text-Only Testing
+1. Run the Chat Completions format example:
+   ```bash
+   python openai_realtime_api/examples/weather_chat_completion_example.py
+   ```
+
+2. Or run the basic text example:
+   ```bash
+   python openai_realtime_api/examples/weather_test_example.py
+   ```
+
+## Implementation Details
+
+### Chat Completions API Inspired Format Benefits
+
+1. **Strict Schema Validation**
+   ```json
+   {
+       "strict": true,
+       "additionalProperties": false
+   }
+   ```
+   - Ensures function calls adhere exactly to the schema
+   - Prevents invalid parameters
+   - Better error handling
+
+2. **Enhanced Parameter Validation**
+   ```json
+   {
+       "days": {
+           "type": "integer",
+           "minimum": 1,
+           "maximum": 7
+       }
+   }
+   ```
+   - Numeric range validation
+   - Type enforcement
+   - Required field validation
+
+3. **Better Error Recovery**
+   - Structured error responses
+   - Clear validation messages
+   - Graceful failure handling
+
+### Function Call Flow (Chat Completions Format)
+
+1. **User Input**: Voice or text weather query
+2. **Function Detection**: AI identifies need for weather function
+3. **Parameter Extraction**: AI extracts location and optional parameters
+4. **Schema Validation**: Strict validation against function schema
+5. **Function Execution**: Call weather service with validated parameters
+6. **Result Formatting**: Format data according to Chat Completions standards
+7. **Response Generation**: AI incorporates results into natural language response
+
+### Sample Function Call Response
+
+```json
+{
+    "success": true,
+    "location": "Paris, France",
+    "current_conditions": {
+        "temperature": "18°C",
+        "condition": "partly cloudy",
+        "humidity": "65%",
+        "wind_speed": "12 km/h"
+    },
+    "timestamp": "2024-01-15T14:30:00"
+}
+```
+
+## Configuration
+
+### Session Configuration (Chat Completions Format)
 ```python
 session_config = {
-    "tools": [
-        {
-            "type": "function",
-            "name": "get_current_weather",
-            "description": "Get the current weather conditions for a specific location.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "location": {
-                        "type": "string",
-                        "description": "The city and state/country, e.g. 'San Francisco, CA'"
-                    }
-                },
-                "required": ["location"]
-            }
-        }
-    ],
+    "instructions": "You are a professional weather assistant...",
+    "tools": [weather_functions],
     "tool_choice": "auto"
 }
 ```
 
-### 2. Function Detection
+### Error Handling
+- **Invalid Location**: Graceful handling of unrecognized locations
+- **Parameter Validation**: Comprehensive parameter checking
+- **API Failures**: Fallback responses and error messages
+- **Timeout Handling**: Request timeout management
 
-When the assistant decides to call a function, it returns a response with `type: "function_call"`:
+## Testing
 
-```python
-def on_response_completed(data):
-    response = data.get("response", {})
-    output = response.get("output", [])
-    
-    for item in output:
-        if item.get("type") == "function_call":
-            # Handle the function call
-            asyncio.create_task(self.handle_function_call(item))
-```
-
-### 3. Function Execution
-
-The client executes the requested function and sends results back:
-
-```python
-async def handle_function_call(self, function_call_item):
-    function_name = function_call_item.get("name")
-    call_id = function_call_item.get("call_id")
-    arguments = json.loads(function_call_item.get("arguments", "{}"))
-    
-    # Execute the function
-    if function_name == "get_current_weather":
-        location = arguments.get("location")
-        result = self.weather_service.get_current_weather(location)
-    
-    # Send result back to assistant
-    self.client.send_event("conversation.item.create", {
-        "item": {
-            "type": "function_call_output",
-            "call_id": call_id,
-            "output": json.dumps(result)
-        }
-    })
-    
-    # Request new response with function results
-    self.client.send_event("response.create")
-```
-
-## Available Weather Functions
-
-### get_current_weather
-
-Gets current weather conditions for a location.
-
-**Parameters:**
-- `location` (string, required): City and state/country (e.g., "Paris, France")
-
-**Returns:**
-```json
-{
-    "location": "Paris, France",
-    "temperature": "22°C",
-    "condition": "partly cloudy",
-    "humidity": "65%"
-}
-```
-
-### get_weather_forecast
-
-Gets weather forecast for multiple days.
-
-**Parameters:**
-- `location` (string, required): City and state/country
-- `days` (integer, optional): Number of forecast days (1-7, default: 3)
-
-**Returns:**
-```json
-{
-    "location": "Tokyo, Japan",
-    "forecast_days": 5,
-    "forecast": [
-        {
-            "day": 1,
-            "high_temperature": 28,
-            "low_temperature": 18,
-            "condition": "sunny",
-            "chance_of_rain": 10
-        }
-    ]
-}
-```
-
-## Usage Examples
-
-### Voice Queries
-
-Users can ask natural language questions:
-
-- "What's the weather like in New York?"
-- "Give me a 5-day forecast for Tokyo"
-- "Is it raining in London right now?"
-- "How's the weather in Paris, France?"
-
-### Text Queries
-
-For testing, you can also send text messages:
-
-```python
-# Send a text weather query
-client.send_text_message("What's the current weather in San Francisco?")
-```
-
-## Running the Examples
-
-### 1. Full Voice Example
-
-Run the complete speech-to-speech example with weather functions:
-
+### Automated Tests
+Run the comprehensive test suite:
 ```bash
-conda activate ai-researcher
-cd openai_realtime_api/examples
-python speech_to_speech_example.py
+python openai_realtime_api/examples/weather_chat_completion_example.py
 ```
 
-**Features:**
-- Hold SPACE to speak
-- Ask weather questions naturally
-- Get spoken responses with weather information
+### Test Cases
+1. **Current Weather Queries**: Single location weather requests
+2. **Forecast Requests**: Multi-day weather forecasts
+3. **Comparison Queries**: Multiple location comparisons
+4. **Natural Language**: Complex conversational queries
 
-### 2. Text-Only Test
+## Best Practices
 
-Run a simplified test without audio complexity:
-
-```bash
-conda activate ai-researcher
-cd openai_realtime_api/examples
-python weather_test_example.py
-```
-
-**Features:**
-- Tests weather functions with predefined queries
-- Shows function call flow and responses
-- Easier for debugging and development
-
-## Implementation Details
-
-### Weather Service
-
-The included `WeatherService` class provides mock weather data:
-
-```python
-class WeatherService:
-    @staticmethod
-    def get_current_weather(location: str) -> dict:
-        # Returns mock weather data with:
-        # - Random temperature (-10°C to 35°C)
-        # - Random weather condition
-        # - Random humidity (30-90%)
-        # - Current timestamp
-        
-    @staticmethod
-    def get_weather_forecast(location: str, days: int = 3) -> dict:
-        # Returns mock forecast data with:
-        # - Daily high/low temperatures
-        # - Weather conditions
-        # - Chance of rain
-```
-
-### Real Weather API Integration
-
-To use real weather data, replace the mock service with actual API calls:
-
-```python
-import requests
-
-class RealWeatherService:
-    def __init__(self, api_key: str):
-        self.api_key = api_key
-        self.base_url = "https://api.openweathermap.org/data/2.5"
-    
-    def get_current_weather(self, location: str) -> dict:
-        url = f"{self.base_url}/weather"
-        params = {
-            "q": location,
-            "appid": self.api_key,
-            "units": "metric"
-        }
-        response = requests.get(url, params=params)
-        data = response.json()
-        
-        return {
-            "location": location,
-            "temperature": f"{data['main']['temp']}°C",
-            "condition": data['weather'][0]['description'],
-            "humidity": f"{data['main']['humidity']}%"
-        }
-```
+### Function Schema Design (Chat Completions Format)
+1. **Use Strict Mode**: Always set `"strict": true`
+2. **Validate Properties**: Set `"additionalProperties": false`
+3. **Required Fields**: Include all parameters in `"required"` array
+4. **Clear Descriptions**: Provide detailed parameter descriptions
+5. **Type Constraints**: Use `"minimum"`, `"maximum"`, `"enum"` for validation
 
 ### Error Handling
+1. **Validate Inputs**: Check all required parameters before execution
+2. **Graceful Failures**: Provide helpful error messages
+3. **Fallback Responses**: Handle API failures gracefully
+4. **User Feedback**: Clear indication of function call status
 
-The implementation includes comprehensive error handling:
+### Performance Optimization
+1. **Async Operations**: Use async/await for API calls
+2. **Timeout Management**: Set appropriate timeouts for function calls
+3. **Resource Cleanup**: Properly dispose of resources after use
+4. **Caching**: Consider caching weather data for frequently requested locations
 
-- **Invalid JSON**: Handles malformed function arguments
-- **Unknown Functions**: Gracefully handles unexpected function calls
-- **Network Errors**: Manages API connection issues
-- **Timeouts**: Prevents hanging on unresponsive calls
+## Migration Guide
 
-### Event Flow
+### From Original Format to Chat Completions Format
 
-The complete function calling flow:
+1. **Update Schema Structure**:
+   ```python
+   # Old format
+   {
+       "type": "function",
+       "name": "function_name",
+       "parameters": {...}
+   }
+   
+   # New format
+   {
+       "type": "function",
+       "function": {
+           "name": "function_name",
+           "parameters": {...},
+           "strict": true
+       }
+   }
+   ```
 
-1. **User Input**: "What's the weather in Paris?"
-2. **Assistant Analysis**: Determines weather function needed
-3. **Function Call**: Returns function name and arguments
-4. **Client Execution**: Runs weather service function
-5. **Result Submission**: Sends weather data back to assistant
-6. **Final Response**: Assistant generates natural language response
+2. **Add Strict Validation**:
+   ```python
+   "parameters": {
+       "type": "object",
+       "properties": {...},
+       "required": ["all", "parameters"],
+       "additionalProperties": false
+   }
+   ```
 
-## Advanced Features
-
-### Multiple Function Calls
-
-The assistant can make multiple function calls in sequence:
-
-```
-User: "Compare the weather in New York and London"
-→ get_current_weather(location="New York, NY")
-→ get_current_weather(location="London, UK")
-→ Final response comparing both locations
-```
-
-### Context Awareness
-
-The assistant maintains context across function calls:
-
-```
-User: "What's the weather in Tokyo?"
-Assistant: [Calls weather function, provides current weather]
-User: "What about the forecast?"
-Assistant: [Calls forecast function for Tokyo, remembers location]
-```
-
-### Custom Instructions
-
-You can customize how the assistant uses weather functions:
-
-```python
-instructions = """
-You are a weather expert assistant. When providing weather information:
-- Always mention the temperature in both Celsius and Fahrenheit
-- Provide clothing recommendations based on conditions
-- Include warnings for severe weather
-- Be enthusiastic about good weather and supportive during bad weather
-"""
-```
+3. **Update Function Handling**:
+   - Use `function_call_item.get("name")` instead of direct access
+   - Add comprehensive parameter validation
+   - Implement better error handling
 
 ## Troubleshooting
 
 ### Common Issues
+1. **Function Not Called**: Check schema format and descriptions
+2. **Parameter Errors**: Verify required fields and validation rules
+3. **Response Timeout**: Increase timeout values for complex queries
+4. **Connection Issues**: Verify API key and network connectivity
 
-1. **Function Not Called**: 
-   - Check function description clarity
-   - Ensure `tool_choice: "auto"` is set
-   - Verify user query is weather-related
+### Debug Tips
+1. **Enable Logging**: Add debug prints to track function calls
+2. **Validate Schemas**: Test function schemas independently
+3. **Check Parameters**: Verify parameter extraction and validation
+4. **Monitor Events**: Track WebSocket events for debugging
 
-2. **Invalid Arguments**:
-   - Check JSON schema validation
-   - Ensure location format is clear
-   - Handle missing required parameters
+## Conclusion
 
-3. **Response Timeout**:
-   - Increase timeout duration
-   - Check network connectivity
-   - Verify function execution speed
-
-### Debug Mode
-
-Enable verbose logging to see function call details:
-
-```python
-import logging
-logging.basicConfig(level=logging.DEBUG)
-```
-
-This will show:
-- Function call detection
-- Argument parsing
-- Function execution results
-- Response generation
-
-## Next Steps
-
-1. **Real Weather API**: Replace mock service with OpenWeatherMap or similar
-2. **Location Services**: Add GPS/IP-based location detection
-3. **Weather Alerts**: Implement severe weather notifications
-4. **Historical Data**: Add functions for weather history
-5. **Extended Forecasts**: Support longer-term forecasts
-6. **Multiple Locations**: Track weather for multiple saved locations
-
-## Related Documentation
-
-- [OpenAI Realtime API Function Calling](https://platform.openai.com/docs/guides/realtime-conversations#function-calling)
-- [JSON Schema Reference](https://json-schema.org/)
-- [OpenWeatherMap API](https://openweathermap.org/api)
-- [Voice Agent Setup](./README.md) 
+The Chat Completions API format provides enhanced reliability, better error handling, and improved compatibility with OpenAI's function calling standards. It's recommended for production implementations requiring robust function calling capabilities. 
