@@ -37,6 +37,17 @@ test -f .env && grep -q "OPENAI_API_KEY" .env
 python -c "import websocket; import asyncio; print('WebSocket ready')"
 ```
 
+**5. Twilio Voice AI Assistant Verification**
+```bash
+# Check Twilio project dependencies
+if [ -d "twilio_voice_ai" ]; then
+    cd twilio_voice_ai
+    python -c "import fastapi, uvicorn, websockets, twilio; print('Twilio AI deps ready')"
+    python test_setup.py
+    cd ..
+fi
+```
+
 ## 🔄 Post-Coding Automation Workflow
 
 ### After Every Successful Code Change
@@ -54,6 +65,14 @@ if [[ $(git diff --name-only HEAD~1 | grep -c "openai_realtime_api") -gt 0 ]]; t
     python weather_test_example.py
     python audio_test.py
     cd ../..
+fi
+
+# If Twilio Voice AI files changed, run specific tests
+if [[ $(git diff --name-only HEAD~1 | grep -c "twilio_voice_ai") -gt 0 ]]; then
+    cd twilio_voice_ai
+    python test_setup.py
+    python test_simple.py
+    cd ..
 fi
 
 # STOP if tests fail - do not proceed to git operations
@@ -118,11 +137,19 @@ find . -type d -name "__pycache__" -exec rm -rf {} +
 - Integration changes → Update [tests/test_integration.py](mdc:tests/test_integration.py)
 
 **For Realtime API modifications:**
-- [openai_realtime_api/examples/](mdc:openai_realtime_api/examples/) changes → Test all affected examples
+- [openai_realtime_api/examples/](mdc:openai_realtime_api/examples) changes → Test all affected examples
 - Weather function changes → Run [weather_test_example.py](mdc:openai_realtime_api/examples/weather_test_example.py)
 - Speech-to-speech changes → Test [speech_to_speech_example.py](mdc:openai_realtime_api/examples/speech_to_speech_example.py)
 - WebSocket client changes → Test connection stability
 - Audio processing changes → Run [audio_test.py](mdc:openai_realtime_api/examples/audio_test.py)
+
+**For Twilio Voice AI Assistant modifications:**
+- [twilio_voice_ai/main.py](mdc:twilio_voice_ai/main.py) changes → Run full test suite
+- FastAPI route changes → Run [test_api.py](mdc:twilio_voice_ai/test_api.py)
+- Environment configuration changes → Run [test_setup.py](mdc:twilio_voice_ai/test_setup.py)
+- Integration changes → Run [test_simple.py](mdc:twilio_voice_ai/test_simple.py)
+- WebSocket functionality changes → Test Twilio Media Stream connectivity
+- Twilio webhook changes → Validate TwiML response format
 
 ## 🔧 Automated Cursor Maintenance
 
@@ -150,6 +177,13 @@ diff current-packages.txt requirements.txt
 
 # Check Realtime API dependencies
 python -c "import openai; import websocket; import asyncio; print('All deps available')"
+
+# Check Twilio Voice AI dependencies
+if [ -d "twilio_voice_ai" ]; then
+    cd twilio_voice_ai
+    python -c "import fastapi, uvicorn, websockets, twilio; print('Twilio AI deps available')"
+    cd ..
+fi
 ```
 
 ### Weekly Maintenance (Auto-Prompt)
@@ -183,6 +217,11 @@ python -m pytest tests/test_integration.py -v --tb=short
 cd openai_realtime_api/examples
 python audio_test.py
 python weather_test_example.py
+
+# For Twilio Voice AI failures:
+cd twilio_voice_ai
+python test_setup.py
+python test_simple.py
 
 # Check environment issues:
 conda activate ai-researcher
@@ -304,6 +343,23 @@ cd openai_realtime_api/examples
 python -c "import weather_chat_completion_example; print('Weather schemas valid')"
 ```
 
+**Twilio Voice AI Components:**
+```bash
+# Check Twilio Voice AI main server compiles
+python -m py_compile twilio_voice_ai/main.py
+
+# Test FastAPI application initialization
+cd twilio_voice_ai
+python -c "import main; print('FastAPI app imports OK')"
+
+# Validate all test scripts compile
+python -m py_compile test_setup.py test_simple.py test_api.py
+
+# Test dependency availability
+python -c "import fastapi, uvicorn, websockets, twilio; print('All Twilio deps available')"
+cd ..
+```
+
 ### Post-Commit Verification
 
 **Functional Testing:**
@@ -315,9 +371,25 @@ python -c "import voice_agent_original; print('Core agent loadable')"
 cd openai_realtime_api/examples
 timeout 10s python audio_test.py || echo "Audio test completed/timeout"
 
+# Test Twilio Voice AI basic functionality
+cd twilio_voice_ai
+python test_setup.py || echo "Twilio setup test completed"
+cd ..
+
 # Verify no syntax regressions
 python -m py_compile voice_agent.py voice_agent_original.py
 ```
 
-This automated workflow ensures consistent, high-quality development practices while maintaining the reliability and functionality of both the core voice agent and the new OpenAI Realtime API integration components.
+This automated workflow ensures consistent, high-quality development practices while maintaining the reliability and functionality of the core voice agent, OpenAI Realtime API integration components, and the new Twilio Voice AI Assistant project.
+
+
+
+
+
+
+
+
+
+
+
 

@@ -60,6 +60,21 @@ pip install -r requirements.txt
 - **Documentation**: [openai_realtime_api/docs/](mdc:openai_realtime_api/docs/)
 - **API tests**: [openai_realtime_api/tests/](mdc:openai_realtime_api/tests/)
 
+### Twilio Voice AI Assistant Project
+- **Main project directory**: [twilio_voice_ai/](mdc:twilio_voice_ai/)
+  - **FastAPI server**: [main.py](mdc:twilio_voice_ai/main.py) - Core server with Twilio webhooks and OpenAI integration
+  - **Dependencies**: [requirements.txt](mdc:twilio_voice_ai/requirements.txt) - FastAPI, Uvicorn, WebSockets, Twilio SDK
+  - **Environment setup**: [.env.example](mdc:twilio_voice_ai/.env.example) - API key configuration template
+  - **Documentation**: [README.md](mdc:twilio_voice_ai/README.md) - Comprehensive setup and usage guide
+  - **Quick setup**: [SETUP_GUIDE.md](mdc:twilio_voice_ai/SETUP_GUIDE.md) - Fast deployment instructions
+  - **Automated installer**: [install.py](mdc:twilio_voice_ai/install.py) - One-command setup script
+  
+### Twilio Voice AI Testing Suite
+- **Setup verification**: [test_setup.py](mdc:twilio_voice_ai/test_setup.py) - Dependency and environment validation
+- **Integration tests**: [test_simple.py](mdc:twilio_voice_ai/test_simple.py) - Core functionality verification
+- **API endpoint tests**: [test_api.py](mdc:twilio_voice_ai/test_api.py) - FastAPI route validation
+- **Git configuration**: [.gitignore](mdc:twilio_voice_ai/.gitignore) - Project-specific exclusions
+
 ## 🔄 Git Workflow Automation
 
 ### After Each Successful Coding Session
@@ -205,6 +220,33 @@ python weather_chat_completion_example.py
 python speech_to_speech_example.py
 ```
 
+### Twilio Voice AI Assistant Commands
+```bash
+# Navigate to Twilio project
+cd twilio_voice_ai
+
+# Automated setup and installation
+python install.py
+
+# Verify setup and dependencies
+python test_setup.py
+
+# Run integration tests
+python test_simple.py
+
+# Test API endpoints
+python test_api.py
+
+# Start the FastAPI server
+python main.py
+
+# Start server with uvicorn directly
+uvicorn main:app --host 0.0.0.0 --port 5050
+
+# Expose server publicly with ngrok
+ngrok http 5050
+```
+
 ## 🚨 Critical Reminders
 
 1. **Always activate `ai-researcher` conda environment first**
@@ -241,10 +283,14 @@ python speech_to_speech_example.py
 - ✅ Connection stability improvements
 - ✅ Comprehensive test suite
 - ✅ Documentation and troubleshooting guides
+- ✅ Twilio Voice AI Assistant with phone call integration
+- ✅ FastAPI server with WebSocket media streaming
+- ✅ Automated deployment and testing scripts
 
 ### Active Components
 - 🟢 **voice_agent_original.py** - Main voice agent
 - 🟢 **speech_to_speech_example.py** - Real-time voice conversation
 - 🟢 **weather_chat_completion_example.py** - Weather function demo
+- 🟢 **twilio_voice_ai/main.py** - Twilio Voice AI FastAPI server
 - 🟢 **All test suites** - Comprehensive testing coverage
 
