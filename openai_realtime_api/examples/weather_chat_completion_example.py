@@ -172,6 +172,20 @@ class ChatCompletionWeatherDemo:
             # Connect
             await self.client.connect()
             
+            # Wait for connection to fully establish
+            max_wait = 10  # 10 seconds max wait
+            waited = 0
+            while not self.client.connected and waited < max_wait:
+                await asyncio.sleep(0.5)
+                waited += 0.5
+            
+            if not self.client.connected:
+                print("❌ Failed to establish connection")
+                return False
+            
+            # Wait a bit more for session to be ready
+            await asyncio.sleep(2)
+            
             print("✅ Connected to OpenAI Realtime API with Chat Completions format")
             return True
             
@@ -315,6 +329,14 @@ class ChatCompletionWeatherDemo:
         """Send a text query and wait for response."""
         print(f"💬 Sending query: {query}")
         
+        # Check connection status
+        if not self.client.connected:
+            print("❌ Not connected to API")
+            return
+        
+        # Wait a moment for connection to stabilize
+        await asyncio.sleep(1)
+        
         # Send message
         self.client.send_event("conversation.item.create", {
             "item": {
@@ -356,25 +378,25 @@ class ChatCompletionWeatherDemo:
         
         # Test 1: Current weather with detailed response
         print("\n📍 Test 1: Current Weather (Detailed)")
-        await self.send_text_query("What's the current weather in Tokyo, Japan? Include all details.")
+        await self.send_text_query("What's the current weather in Melbourne, Australia? Include all details.")
         
         await asyncio.sleep(2)
         
         # Test 2: Weather forecast with specific days
         print("\n📍 Test 2: Weather Forecast (7 days)")
-        await self.send_text_query("Give me a detailed 7-day weather forecast for London, UK")
+        await self.send_text_query("Give me a detailed 7-day weather forecast for Melbourne, Australia")
         
         await asyncio.sleep(2)
         
         # Test 3: Comparison query
         print("\n📍 Test 3: Weather Comparison")
-        await self.send_text_query("Compare the current weather in New York and Paris")
+        await self.send_text_query("Compare the current weather in Melbourne and Sydney")
         
         await asyncio.sleep(2)
         
         # Test 4: Natural language query
         print("\n📍 Test 4: Natural Language Query")
-        await self.send_text_query("Should I bring an umbrella if I'm going to Berlin tomorrow?")
+        await self.send_text_query("Should I bring an umbrella if I'm going to Melbourne, Australia tomorrow?")
         
         print("\n✅ All Chat Completions API format tests completed!")
     
