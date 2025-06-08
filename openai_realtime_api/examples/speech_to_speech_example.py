@@ -280,12 +280,6 @@ class VoiceConversationDemo:
         def on_recording_started(data):
             print("🔴 Recording started - speak now!")
             self.speaking = True
-            
-            # Cancel any pending responses to prevent interference
-            try:
-                self.client.send_event("response.cancel")
-            except:
-                pass  # Ignore errors if no response to cancel
         
         def on_recording_stopped(data):
             print("⏹️  Recording stopped - processing...")
