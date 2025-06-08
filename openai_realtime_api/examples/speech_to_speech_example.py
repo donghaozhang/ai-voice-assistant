@@ -119,6 +119,8 @@ class VoiceConversationDemo:
         self.client = None
         self.conversation_active = False
         self.speaking = False
+        self.assistant_speaking = False  # Track when assistant is speaking
+        self.last_response_time = 0  # Track when last response finished
         self.weather_service = WeatherService()
         
     async def setup(self):
@@ -152,45 +154,41 @@ class VoiceConversationDemo:
                 "tools": [
                     {
                         "type": "function",
-                        "function": {
-                            "name": "get_current_weather",
-                            "description": "Get the current weather conditions for a specific location.",
-                            "parameters": {
-                                "type": "object",
-                                "properties": {
-                                    "location": {
-                                        "type": "string",
-                                        "description": "The city and state/country, e.g. 'San Francisco, CA' or 'London, UK'"
-                                    }
-                                },
-                                "required": ["location"],
-                                "additionalProperties": False
-                            }
+                        "name": "get_current_weather",
+                        "description": "Get the current weather conditions for a specific location.",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {
+                                "location": {
+                                    "type": "string",
+                                    "description": "The city and state/country, e.g. 'San Francisco, CA' or 'London, UK'"
+                                }
+                            },
+                            "required": ["location"],
+                            "additionalProperties": False
                         }
                     },
                     {
                         "type": "function",
-                        "function": {
-                            "name": "get_weather_forecast",
-                            "description": "Get weather forecast for a specific location over the next few days.",
-                            "parameters": {
-                                "type": "object",
-                                "properties": {
-                                    "location": {
-                                        "type": "string",
-                                        "description": "The city and state/country, e.g. 'San Francisco, CA' or 'London, UK'"
-                                    },
-                                    "days": {
-                                        "type": "integer",
-                                        "description": "Number of days for the forecast (1-7)",
-                                        "minimum": 1,
-                                        "maximum": 7,
-                                        "default": 3
-                                    }
+                        "name": "get_weather_forecast",
+                        "description": "Get weather forecast for a specific location over the next few days.",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {
+                                "location": {
+                                    "type": "string",
+                                    "description": "The city and state/country, e.g. 'San Francisco, CA' or 'London, UK'"
                                 },
-                                "required": ["location", "days"],
-                                "additionalProperties": False
-                            }
+                                "days": {
+                                    "type": "integer",
+                                    "description": "Number of days for the forecast (1-7)",
+                                    "minimum": 1,
+                                    "maximum": 7,
+                                    "default": 3
+                                }
+                            },
+                            "required": ["location", "days"],
+                            "additionalProperties": False
                         }
                     }
                 ],
@@ -204,6 +202,20 @@ class VoiceConversationDemo:
             
             # Connect to the API
             await self.client.connect()
+            
+            # Wait for connection to fully establish
+            max_wait = 10  # 10 seconds max wait
+            waited = 0
+            while not self.client.connected and waited < max_wait:
+                await asyncio.sleep(0.5)
+                waited += 0.5
+            
+            if not self.client.connected:
+                print("❌ Failed to establish stable connection")
+                return False
+            
+            # Wait a bit more for session to be ready
+            await asyncio.sleep(2)
             
             print("✅ Connected to OpenAI Realtime API with weather functions")
             return True
@@ -229,6 +241,13 @@ class VoiceConversationDemo:
         
         def on_response_started(data):
             print("🤖 Assistant is responding...")
+            self.assistant_speaking = True  # Disable user recording while assistant speaks
+            
+            # Stop any ongoing recording to prevent feedback loop
+            if self.speaking:
+                print("🔇 Stopping recording - assistant is speaking")
+                self.client.stop_recording()
+                self.speaking = False
         
         def on_response_completed(data):
             # Check if this response contains function calls
@@ -236,17 +255,37 @@ class VoiceConversationDemo:
             output = response.get("output", [])
             
             # Process any function calls
+            function_call_found = False
             for item in output:
                 if item.get("type") == "function_call":
-                    asyncio.create_task(self.handle_function_call(item))
-                    return  # Don't show "ready for input" yet
+                    function_call_found = True
+                    # Handle function call synchronously
+                    self.handle_function_call_sync(item)
+                    break  # Handle one function call at a time
             
-            print("✅ Assistant finished responding")
-            print("🎤 Ready for next input - Hold SPACE to speak")
+            if not function_call_found:
+                print("✅ Assistant finished responding")
+                # Add a small delay to ensure audio has finished playing
+                import threading
+                def delayed_enable():
+                    import time
+                    time.sleep(2)  # Wait 2 seconds for audio to finish and prevent immediate responses
+                    self.assistant_speaking = False  # Re-enable user recording
+                    self._warned_about_assistant_speaking = False  # Reset warning flag
+                    self.last_response_time = time.time()  # Mark when we're ready again
+                    print("🎤 Ready for next input - Hold SPACE to speak")
+                
+                threading.Thread(target=delayed_enable, daemon=True).start()
         
         def on_recording_started(data):
             print("🔴 Recording started - speak now!")
             self.speaking = True
+            
+            # Cancel any pending responses to prevent interference
+            try:
+                self.client.send_event("response.cancel")
+            except:
+                pass  # Ignore errors if no response to cancel
         
         def on_recording_stopped(data):
             print("⏹️  Recording stopped - processing...")
@@ -255,10 +294,12 @@ class VoiceConversationDemo:
         def on_error(data):
             error_msg = data.get("error", "Unknown error")
             print(f"❌ Error: {error_msg}")
+            self.assistant_speaking = False  # Reset state on error
         
         def on_disconnected(data):
             print("🔌 Disconnected from API")
             self.conversation_active = False
+            self.assistant_speaking = False  # Reset state on disconnect
         
         # Register all handlers
         self.client.on("connected", on_connected)
@@ -271,6 +312,71 @@ class VoiceConversationDemo:
         self.client.on("error", on_error)
         self.client.on("disconnected", on_disconnected)
     
+    def handle_function_call_sync(self, function_call_item):
+        """Handle function calls from the assistant (synchronous version)."""
+        try:
+            function_name = function_call_item.get("name")
+            call_id = function_call_item.get("call_id")
+            arguments_str = function_call_item.get("arguments", "{}")
+            
+            print(f"🔧 Function call: {function_name}")
+            print(f"📋 Arguments: {arguments_str}")
+            
+            # Parse function arguments
+            try:
+                arguments = json.loads(arguments_str)
+            except json.JSONDecodeError:
+                print(f"❌ Invalid function arguments: {arguments_str}")
+                return
+            
+            # Execute the appropriate function
+            if function_name == "get_current_weather":
+                location = arguments.get("location", "Unknown")
+                print(f"🌤️  Getting current weather for {location}...")
+                weather_data = self.weather_service.get_current_weather(location)
+                result = {
+                    "location": weather_data["location"],
+                    "temperature": f"{weather_data['temperature']}°C",
+                    "condition": weather_data["condition"],
+                    "humidity": f"{weather_data['humidity']}%"
+                }
+                
+            elif function_name == "get_weather_forecast":
+                location = arguments.get("location", "Unknown")
+                days = arguments.get("days", 3)
+                print(f"📅 Getting {days}-day weather forecast for {location}...")
+                forecast_data = self.weather_service.get_weather_forecast(location, days)
+                result = {
+                    "location": forecast_data["location"],
+                    "forecast_days": forecast_data["forecast_days"],
+                    "forecast": forecast_data["forecast"]
+                }
+                
+            else:
+                print(f"❌ Unknown function: {function_name}")
+                return
+            
+            # Send function result back to the assistant
+            print(f"📤 Sending function result...")
+            print(f"📊 Weather result: {result}")
+            
+            self.client.send_event("conversation.item.create", {
+                "item": {
+                    "type": "function_call_output",
+                    "call_id": call_id,
+                    "output": json.dumps(result)
+                }
+            })
+            
+            # Request a new response with the function results
+            print("🎯 Requesting response with function results...")
+            self.client.send_event("response.create")
+            
+        except Exception as e:
+            print(f"❌ Error handling function call: {e}")
+            # Even if there's an error, we should signal we're ready for more input
+            print("✅ Ready for next input - Hold SPACE to speak")
+
     async def handle_function_call(self, function_call_item):
         """Handle function calls from the assistant."""
         try:
@@ -331,6 +437,8 @@ class VoiceConversationDemo:
             
         except Exception as e:
             print(f"❌ Error handling function call: {e}")
+            # Even if there's an error, we should signal we're ready for more input
+            print("✅ Ready for next input - Hold SPACE to speak")
     
     def print_instructions(self):
         """Print usage instructions."""
@@ -363,8 +471,25 @@ class VoiceConversationDemo:
             while self.conversation_active:
                 # Check for spacebar press (push-to-talk)
                 if keyboard.is_pressed('space'):
-                    if self.client.is_ready_for_input():
+                    # Check if connected, ready for input, and assistant is not speaking
+                    if self.assistant_speaking:
+                        # Don't allow recording while assistant is speaking (prevent feedback loop)
+                        if not hasattr(self, '_warned_about_assistant_speaking'):
+                            print("🔇 Please wait - assistant is speaking...")
+                            self._warned_about_assistant_speaking = True
+                        continue
+                    elif self.client.connected and self.client.is_ready_for_input():
+                        # Check if enough time has passed since last response (cooldown period)
+                        import time
+                        if time.time() - self.last_response_time < 3:  # 3 second cooldown
+                            if not hasattr(self, '_warned_about_cooldown'):
+                                print("⏱️  Please wait - cooling down from last response...")
+                                self._warned_about_cooldown = True
+                            continue
+                        self._warned_about_cooldown = False
                         self.client.start_recording()
+                    elif not self.client.connected:
+                        print("⚠️ Not connected - cannot record")
                         
                         # Wait while space is held
                         while keyboard.is_pressed('space') and self.conversation_active:
@@ -372,7 +497,7 @@ class VoiceConversationDemo:
                         
                         # Stop recording when space is released
                         if self.speaking:
-                            self.client.stop_speaking()
+                            self.client.stop_recording()
                 
                 await asyncio.sleep(0.1)
                 
