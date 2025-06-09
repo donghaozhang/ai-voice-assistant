@@ -1,0 +1,304 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# File Structure Standards & Organization Rules
+
+## 🏗️ Voice Agent Project Architecture
+
+### Project Root Structure
+
+```
+voice_agent/                              # Main project root
+├── 📄 voice_agent_original.py            # 🎯 Primary voice agent entry point
+├── 📄 requirements.txt                   # 📦 Root-level Python dependencies
+├── 📄 README.md                         # 📖 Main project documentation
+├── 📄 .env                              # 🔐 Environment variables (ignored by git)
+├── 📄 .env.example                      # 📝 Environment template for setup
+├── 📄 .gitignore                        # 🚫 Git exclusion patterns
+├── 📄 test_audio.wav                    # 🎵 Audio test file for development
+├── 📁 voice_agent_tests/                # 🧪 Core voice agent test suite
+├── 📁 openai_realtime_api/              # ⚡ OpenAI Realtime API integration
+├── 📁 twilio_voice_ai/                  # 📞 Twilio Voice AI Assistant project
+├── 📁 .cursor/                          # ⚙️ Cursor IDE rules and configuration
+├── 📁 .git/                             # 🔄 Git version control data
+├── 📁 .pytest_cache/                    # 🗂️ PyTest temporary cache
+└── 📁 __pycache__/                      # 🐍 Python bytecode cache
+```
+
+## 📁 Directory Organization Standards
+
+### 1. Core Voice Agent (`/voice_agent_tests/`)
+
+**Purpose**: Comprehensive testing suite for the main voice agent functionality
+
+**Structure**:
+```
+voice_agent_tests/
+├── 📄 run_all_tests.py                  # 🚀 Main test runner script
+├── 📄 test_configuration.py             # ⚙️ Environment & API key validation
+├── 📄 test_recording.py                 # 🎤 Audio recording functionality tests
+├── 📄 test_transcription.py             # 🗣️ Speech-to-text conversion tests
+├── 📄 test_text_to_speech.py            # 🔊 Text-to-speech synthesis tests
+├── 📄 test_agent_logic.py               # 🤖 AI agent & memory management tests
+├── 📄 test_main_loop.py                 # 🔄 Main conversation flow tests
+├── 📄 test_integration.py               # 🔗 End-to-end integration tests
+├── 📄 voice_agent_backup.py             # 💾 Backup version of voice agent
+└── 📄 VOICE_TROUBLESHOOTING.md          # 🔧 Debugging and fix guide
+```
+
+**File Naming Convention**:
+- Test files: `test_[component].py`
+- Utilities: `[descriptive_name].py`
+- Documentation: `[SUBJECT]_[TYPE].md` (uppercase)
+
+### 2. OpenAI Realtime API (`/openai_realtime_api/`)
+
+**Purpose**: OpenAI Realtime API integration with WebSocket and WebRTC clients
+
+**Structure**:
+```
+openai_realtime_api/
+├── 📄 __init__.py                       # 📦 Package initialization
+├── 📄 README.md                         # 📚 API integration documentation
+├── 📄 requirements.txt                  # 📋 API-specific dependencies
+├── 📄 WEATHER_FUNCTIONS.md              # 🌤️ Function calling documentation
+├── 📁 examples/                         # 💡 Working demo scripts
+│   ├── 📄 speech_to_speech_example.py   # 🗣️ Real-time voice conversation
+│   ├── 📄 weather_chat_completion_example.py # 🌦️ Weather function demo
+│   ├── 📄 weather_test_example.py       # 🧪 Weather function testing
+│   ├── 📄 transcription_example.py      # 📝 Transcription demo
+│   └── 📄 audio_test.py                 # 🔊 Audio system testing
+├── 📁 websocket_client/                 # 🔌 WebSocket client implementation
+├── 📁 webrtc_client/                    # 🌐 WebRTC client implementation
+├── 📁 server/                           # 🖥️ Server-side components
+├── 📁 docs/                             # 📖 Detailed API documentation
+└── 📁 tests/                            # 🧪 API-specific test suite
+```
+
+**File Naming Convention**:
+- Examples: `[feature]_example.py`
+- Tests: `[component]_test.py` or `test_[component].py`
+- Documentation: `[SUBJECT]_[TYPE].md`
+
+### 3. Twilio Voice AI Assistant (`/twilio_voice_ai/`)
+
+**Purpose**: Complete Twilio Voice AI Assistant with phone call integration
+
+**Structure**:
+```
+twilio_voice_ai/
+├── 📄 main.py                           # 🚀 FastAPI server entry point
+├── 📄 requirements.txt                  # 📦 Twilio project dependencies
+├── 📄 .env.example                      # 🔑 Environment configuration template
+├── 📄 README.md                         # 📚 Comprehensive setup guide
+├── 📄 SETUP_GUIDE.md                    # ⚡ Quick deployment instructions
+├── 📄 install.py                        # 🔧 Automated installation script
+├── 📄 test_setup.py                     # ✅ Setup and dependency validation
+├── 📄 test_simple.py                    # 🧪 Core functionality verification
+├── 📄 test_api.py                       # 🌐 FastAPI endpoint testing
+└── 📄 .gitignore                        # 🚫 Project-specific git exclusions
+```
+
+**File Naming Convention**:
+- Main server: `main.py` (only in this directory)
+- Tests: `test_[component].py`
+- Documentation: `[PURPOSE]_GUIDE.md` or `README.md`
+- Setup scripts: `[action].py` (install.py, setup.py, etc.)
+
+### 4. Cursor Configuration (`/.cursor/`)
+
+**Purpose**: IDE-specific rules, workflows, and configuration
+
+**Structure**:
+```
+.cursor/
+└── 📁 rules/                            # 📋 Cursor IDE automation rules
+    ├── 📄 automated-workflow-checks.mdc  # 🤖 Quality & automation enforcement
+    ├── 📄 voice-agent-workflow.mdc       # 🎤 Development workflow standards
+    └── 📄 file-structure-standards.mdc   # 🏗️ Project organization rules
+```
+
+**File Naming Convention**:
+- Rules: `[purpose]-[type].mdc`
+- Configuration: `[component].json` or `[component].yaml`
+
+## 📋 File Type Standards
+
+### Python Files (`.py`)
+
+**Categories**:
+1. **Entry Points**: `voice_agent_original.py`, `main.py`
+2. **Test Files**: `test_*.py` or `*_test.py`
+3. **Example Scripts**: `*_example.py`
+4. **Utility Scripts**: `install.py`, `setup.py`, `run_all_tests.py`
+
+**Naming Rules**:
+- Use snake_case for all Python files
+- Be descriptive but concise
+- Include purpose in name: `test_`, `example_`, etc.
+
+### Documentation Files (`.md`)
+
+**Categories**:
+1. **Project Overview**: `README.md`
+2. **Guides**: `SETUP_GUIDE.md`, `VOICE_TROUBLESHOOTING.md`
+3. **Specifications**: `WEATHER_FUNCTIONS.md`
+
+**Naming Rules**:
+- Use UPPERCASE for standalone documentation
+- Use Title_Case for multi-word names
+- Be specific about content: `TROUBLESHOOTING`, `SETUP_GUIDE`
+
+### Configuration Files
+
+**Categories**:
+1. **Dependencies**: `requirements.txt`
+2. **Environment**: `.env`, `.env.example`
+3. **Git**: `.gitignore`
+4. **IDE**: `.cursor/rules/*.mdc`
+
+**Naming Rules**:
+- Follow standard conventions: `requirements.txt`, `.env`
+- Use descriptive names for custom configs
+
+## 🚫 Forbidden File Patterns
+
+### ❌ Files That Should NOT Exist
+
+1. **Duplicate Main Files**:
+   - ❌ `main.py` in project root (removed for clarity)
+   - ✅ `main.py` only in `twilio_voice_ai/`
+
+2. **Temporary Files**:
+   - ❌ `temp_*.wav`, `temp_*.mp3`
+   - ❌ `*.tmp`, `*.bak`
+   - ❌ `.DS_Store` (macOS)
+
+3. **IDE Artifacts**:
+   - ❌ `.vscode/` (use .cursor/ instead)
+   - ❌ `*.swp`, `*.swo` (Vim)
+   - ❌ `Thumbs.db` (Windows)
+
+4. **Python Artifacts**:
+   - ❌ `*.pyc` files in git
+   - ❌ `__pycache__/` in git (should be gitignored)
+
+### 🔍 File Structure Validation
+
+**Automated Checks** (run during pre-commit):
+```bash
+# Check for forbidden main.py in root
+if [ -f "main.py" ]; then
+    echo "❌ ERROR: main.py found in root - should only be in twilio_voice_ai/"
+    exit 1
+fi
+
+# Check for temporary files
+if ls temp_*.wav temp_*.mp3 2>/dev/null; then
+    echo "❌ ERROR: Temporary audio files found - clean up required"
+    exit 1
+fi
+
+# Verify required directories exist
+for dir in "voice_agent_tests" "openai_realtime_api" "twilio_voice_ai"; do
+    if [ ! -d "$dir" ]; then
+        echo "❌ ERROR: Required directory missing: $dir"
+        exit 1
+    fi
+done
+```
+
+## 📊 Directory Purpose Matrix
+
+| Directory | Primary Purpose | Key Files | Test Coverage |
+|-----------|----------------|-----------|---------------|
+| `/` | Project root & main agent | `voice_agent_original.py` | Via voice_agent_tests/ |
+| `/voice_agent_tests/` | Core testing suite | `run_all_tests.py` | Self-testing |
+| `/openai_realtime_api/` | API integration | WebSocket/WebRTC clients | Via examples/ |
+| `/twilio_voice_ai/` | Phone call integration | `main.py` | Via test_*.py |
+| `/.cursor/` | IDE configuration | `rules/*.mdc` | Manual validation |
+
+## 🔧 File Management Best Practices
+
+### Creation Guidelines
+
+1. **Before Creating New Files**:
+   - Verify it belongs in the correct directory
+   - Follow naming conventions for the file type
+   - Consider if it duplicates existing functionality
+
+2. **Directory Selection**:
+   - **Root**: Only core project files
+   - **voice_agent_tests/**: Test files and troubleshooting
+   - **openai_realtime_api/**: API integration and examples
+   - **twilio_voice_ai/**: Complete standalone phone AI project
+
+3. **File Naming**:
+   - Be consistent with existing patterns
+   - Use descriptive names that explain purpose
+   - Follow category conventions (test_, example_, etc.)
+
+### Cleanup Procedures
+
+**After Each Development Session**:
+```bash
+# Remove temporary files
+find . -name "temp_*" -delete
+find . -name "*.tmp" -delete
+
+# Clean Python cache
+find . -name "__pycache__" -type d -exec rm -rf {} +
+find . -name "*.pyc" -delete
+
+# Verify structure integrity
+python -c "
+import os
+required_dirs = ['voice_agent_tests', 'openai_realtime_api', 'twilio_voice_ai']
+for d in required_dirs:
+    assert os.path.exists(d), f'Missing required directory: {d}'
+print('✅ File structure validated')
+"
+```
+
+## 🎯 Structural Quality Gates
+
+### ✅ Green Light Indicators
+
+- All required directories present
+- No duplicate main.py files
+- Consistent naming conventions followed
+- No temporary files in repository
+- Proper separation of concerns by directory
+
+### ❌ Red Flag Triggers
+
+- Missing core directories
+- Files in wrong locations
+- Inconsistent naming patterns
+- Temporary files tracked in git
+- Circular dependencies between directories
+
+## 📈 Structure Evolution Guidelines
+
+### Adding New Components
+
+1. **Assess Directory Fit**:
+   - Core voice agent → `/voice_agent_tests/`
+   - API integration → `/openai_realtime_api/`
+   - Phone functionality → `/twilio_voice_ai/`
+   - New major feature → Create new directory
+
+2. **Maintain Consistency**:
+   - Follow existing patterns
+   - Update this documentation
+   - Add appropriate tests
+   - Update automation rules
+
+3. **Avoid Fragmentation**:
+   - Don't create single-file directories
+   - Group related functionality
+   - Maintain clear boundaries
+
+This file structure ensures maintainable, scalable, and well-organized code that supports the project's multiple integration patterns while maintaining clear separation of concerns.
