@@ -57,7 +57,7 @@ fi
 **Step 1: Test Validation**
 ```bash
 # Auto-run relevant tests based on changed files
-python tests/run_all_tests.py
+python voice_agent_tests/run_all_tests.py
 
 # If Realtime API files changed, run specific tests
 if [[ $(git diff --name-only HEAD~1 | grep -c "openai_realtime_api") -gt 0 ]]; then
@@ -102,6 +102,11 @@ rm -f temp_*.wav temp_*.mp3
 rm -f openai_realtime_api/examples/temp_*.wav
 # Clear __pycache__ directories
 find . -type d -name "__pycache__" -exec rm -rf {} +
+# Verify no duplicate main.py exists in root (should only be in twilio_voice_ai/)
+if [ -f "main.py" ]; then
+    echo "WARNING: Duplicate main.py found in root directory"
+    echo "The main.py should only exist in twilio_voice_ai/ directory"
+fi
 ```
 
 ## 📊 Quality Gates & Enforcement
@@ -117,6 +122,7 @@ find . -type d -name "__pycache__" -exec rm -rf {} +
 - ✅ Realtime API examples functional (if modified)
 - ✅ WebSocket connections stable
 - ✅ No audio feedback loops in speech demos
+- ✅ No duplicate files between root and subdirectories
 
 **Auto-Rejection Criteria:**
 - ❌ Wrong conda environment active
@@ -131,10 +137,10 @@ find . -type d -name "__pycache__" -exec rm -rf {} +
 ### Test Coverage Requirements
 
 **For Core Voice Agent modifications:**
-- [voice_agent_original.py](mdc:voice_agent_original.py) → Update [tests/test_configuration.py](mdc:tests/test_configuration.py)
-- Configuration changes → Update [tests/test_configuration.py](mdc:tests/test_configuration.py)
+- [voice_agent_original.py](mdc:voice_agent_original.py) → Update [voice_agent_tests/test_configuration.py](mdc:voice_agent_tests/test_configuration.py)
+- Configuration changes → Update [voice_agent_tests/test_configuration.py](mdc:voice_agent_tests/test_configuration.py)
 - New functions → Add to appropriate test file
-- Integration changes → Update [tests/test_integration.py](mdc:tests/test_integration.py)
+- Integration changes → Update [voice_agent_tests/test_integration.py](mdc:voice_agent_tests/test_integration.py)
 
 **For Realtime API modifications:**
 - [openai_realtime_api/examples/](mdc:openai_realtime_api/examples) changes → Test all affected examples
@@ -208,10 +214,10 @@ fi
 **2. Recovery Options:**
 ```bash
 # For configuration test failures:
-python -m pytest tests/test_configuration.py -v --tb=short
+python -m pytest voice_agent_tests/test_configuration.py -v --tb=short
 
 # For integration test failures:
-python -m pytest tests/test_integration.py -v --tb=short
+python -m pytest voice_agent_tests/test_integration.py -v --tb=short
 
 # For Realtime API failures:
 cd openai_realtime_api/examples
